@@ -6,4 +6,5 @@ matplotlib
 streamlit>=1.20
 pandas
 gspread
+pillow
 google-auth
