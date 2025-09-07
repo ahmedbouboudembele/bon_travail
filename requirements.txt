@@ -1,0 +1,9 @@
+streamlit
+pymysql
+pandas
+openpyxl
+matplotlib
+streamlit>=1.20
+pandas
+gspread
+google-auth
