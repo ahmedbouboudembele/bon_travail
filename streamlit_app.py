@@ -545,18 +545,13 @@ def page_bons(page_name: str):
 
         # Date (string -> date)
         date_key = f"{page_name}_form_date"
-        date_val = st.session_state.get(date_key)
-        if isinstance(date_val, str):
-            try:
-                default_date_obj = datetime.strptime(date_val, "%Y-%m-%d").date()
-            except Exception:
-                default_date_obj = date.today()
-        elif isinstance(date_val, date):
-            default_date_obj = date_val
-        else:
+        date_default = st.session_state.get(date_key, date.today().strftime("%Y-%m-%d"))
+        try:
+            default_date_obj = datetime.strptime(date_default, "%Y-%m-%d").date()
+        except Exception:
             default_date_obj = date.today()
-
         date_input = c1.date_input("Date", value=default_date_obj, key=date_key, disabled=("date" not in editable_set))
+
 
         # Arrêt déclaré par
         arret_key = f"{page_name}_form_arret_declare_par"
