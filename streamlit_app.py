@@ -170,6 +170,49 @@ def add_bon(bon: Dict[str, Any]) -> None:
                 write_pdr(pdrs)
                 break
 
+def plot_pareto(df: pd.DataFrame, period: str = "day", top_n_labels: int = 3):
+    # Conversion des dates
+    s = pd.to_datetime(df['date'], errors='coerce').dropna()
+    if s.empty:
+        st.info("Aucune date valide.")
+        return
+    
+    if period == "day":
+        groups = s.dt.strftime("%Y-%m-%d")
+        xlabel = "Jour"
+    elif period == "week":
+        groups = s.dt.strftime("%Y-W%U")
+        xlabel = "Semaine"
+    else:
+        groups = s.dt.strftime("%Y-%m")
+        xlabel = "Mois"
+
+    # Comptage des occurrences
+    counts = groups.value_counts().sort_values(ascending=False)
+    total = counts.sum()
+    cum_pct = 100 * counts.cumsum() / total
+
+    # Plot
+    fig, ax1 = plt.subplots(figsize=(10,4))
+    x = range(len(counts))
+
+    # Barres bleues pastel
+    ax1.bar(x, counts.values, color="#4a76a8", alpha=0.85)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(counts.index.tolist(), rotation=45, ha='right', fontsize=9)
+    ax1.set_ylabel("Nombre d'interventions")
+    ax1.set_xlabel(xlabel)
+    ax1.set_title(f"Pareto ({period})", color="#264d73")
+
+    # Courbe orange pastel
+    ax2 = ax1.twinx()
+    ax2.plot(x, cum_pct.values, color='#ff9966', marker='o')
+    ax2.set_ylim(0, 110)
+    ax2.set_ylabel("Pourcentage cumulé (%)")
+
+    st.pyplot(fig)
+
+
 def update_bon(code: str, updates: Dict[str, Any]) -> None:
     bons = read_bons()
     found = False
