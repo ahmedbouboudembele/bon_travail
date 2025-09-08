@@ -492,18 +492,15 @@ def page_bons(page_name: str):
     col_load1, col_load2 = st.columns([3,1])
     sel_key = f"sel_{page_name}"
     sel_code = col_load1.selectbox("Charger un bon existant (optionnel)", options=[""] + codes, key=sel_key)
-    with st.form(f"form_load_{page_name}"):
-        sel_code = st.selectbox("Charger un bon existant", options=[""] + codes, key=f"sel_{page_name}")
-        submitted_load = st.form_submit_button("Charger")
-        submitted_new = st.form_submit_button("Nouveau")
-        if submitted_load and sel_code:
-            bon = get_bon_by_code(sel_code)
-            if bon:
-                load_bon_into_session(bon, page_name)
-                st.rerun()
-        elif submitted_new:
-            clear_form_session(page_name)
+    if col_load2.button("Charger", key=f"btn_load_{page_name}") and sel_code:
+        bon = get_bon_by_code(sel_code)
+        if bon:
+            load_bon_into_session(bon, page_name)
             st.rerun()
+    if col_load2.button("Nouveau", key=f"btn_new_{page_name}"):
+        clear_form_session(page_name)
+        st.rerun()
+
 
 
     # Définition des champs éditables par fenêtre
