@@ -18,7 +18,7 @@ from openpyxl.drawing.image import Image as XLImage
 # ---------------------------
 # Configuration & thème
 # ---------------------------
-st.set_page_config(page_title="Work Order Management (Version Final)", layout="wide")
+st.set_page_config(page_title="Work Order Management", layout="wide")
 
 # Palette bleu / gris pastel - CSS simple
 st.markdown(
