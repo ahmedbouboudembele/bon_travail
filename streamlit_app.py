@@ -334,3 +334,73 @@ def page_dashboard():
     st.subheader("Aperçu (derniers d'abord)")
     st.dataframe(df.sort_values(by="date", ascending=False), height=320)
 #==========================================================================================================================
+
+# Fonction utilitaire de permission
+def allowed(page: str) -> bool:
+    role = st.session_state.role
+    if role == "manager":
+        return True
+    if role == "production" and page == "Production":
+        return True
+    if role == "maintenance" and page == "Maintenance":
+        return True
+    if role == "qualite" and page == "Qualité":
+        return True
+    return False
+
+def page_bons(page_name: str):
+    st.header(f"{page_name} — Gestion des bons")
+    if not allowed(page_name):
+        st.warning("Vous n'avez pas la permission pour cette page.")
+        return
+
+    bons = read_bons()
+    df = pd.DataFrame(bons) if bons else pd.DataFrame(columns=BON_COLUMNS)
+    codes = df["code"].astype(str).tolist() if not df.empty else []
+
+    st.subheader("Charger / Nouveau")
+    col_load1, col_load2 = st.columns([3, 1])
+    sel_code = col_load1.selectbox("Charger un bon existant (optionnel)",
+                                   options=[""] + codes, key=f"sel_{page_name}")
+    if col_load2.button("Charger") and sel_code:
+        bon = get_bon_by_code(sel_code)
+        if bon:
+            # Charger dans st.session_state
+            for k, v in bon.items():
+                st.session_state[f"form_{k}"] = v
+            st.rerun()
+    if col_load2.button("Nouveau"):
+        # Réinitialiser le formulaire
+        for k in BON_COLUMNS:
+            st.session_state[f"form_{k}"] = ""
+        st.rerun()
+
+    # Création ou modification d'un bon
+    st.subheader("Bon de travail")
+    with st.form(f"bon_form_{page_name}", clear_on_submit=False):
+        st.text_input("Code du bon", key="form_code")
+        st.date_input("Date", key="form_date")
+        st.text_input("Déclaré par (arrêt déclaré par)", key="form_arret_declare_par")
+        st.selectbox("Poste de charge", options=read_json(FILES["options_poste_de_charge"]),
+                     key="form_poste_de_charge")
+        st.number_input("Heure de déclaration", min_value=0, max_value=24, step=1, key="form_heure_declaration")
+        st.text_input("Machine arrêtée", key="form_machine_arreter")
+        st.selectbox("Description problème", options=read_json(FILES["options_description_probleme"]),
+                     key="form_description_probleme")
+        st.text_input("Département production", key="form_dpt_production")
+        st.text_input("PDR utilisée (code)", key="form_pdr_utilisee")
+        st.selectbox("Résultat", options=["Réparé", "BKO", "Aucune action"], key="form_resultat")
+        st.selectbox("Condition d'acceptation", options=["Réparé", "BKO", "Aucune action"], key="form_condition_acceptation")
+        submitted = st.form_submit_button("Enregistrer bon")
+        if submitted:
+            try:
+                bon_data = {k[5:]: st.session_state[k] for k in st.session_state if k.startswith("form_")}
+                if get_bon_by_code(bon_data["code"]):
+                    update_bon(bon_data["code"], bon_data)
+                    st.success("Bon mis à jour.")
+                else:
+                    add_bon(bon_data)
+                    st.success("Nouveau bon créé.")
+            except Exception as e:
+                st.error(str(e))
+#=======================================================================================================================
