@@ -424,9 +424,9 @@ else:
 if not users:
     st.warning("Aucun utilisateur trouvé — créez un manager initial.")
     with st.form("init_mgr_form"):
-    mgru = st.text_input("Manager username", value="manager", key="init_mgr_user")
-    mgrp = st.text_input("Manager password", type="password", key="init_mgr_pwd")
-    submitted = st.form_submit_button("Créer manager initial")   # <-- OBLIGATOIRE
+        mgru = st.text_input("Manager username", value="manager", key="init_mgr_user")
+        mgrp = st.text_input("Manager password", type="password", key="init_mgr_pwd")
+        submitted = st.form_submit_button("Créer manager initial")   # <-- OBLIGATOIRE
     if submitted:
         if not mgru or not mgrp:
             st.error("Remplissez les champs.")
