@@ -448,7 +448,13 @@ def page_bons(page_name: str):
 
     with st.form("form_bon"):
         c1,c2,c3 = st.columns(3)
-        code = c1.text_input("Code")
+
+        # === Code (editable seulement pour Production) ===
+        if page_name == "Production":
+            code = c1.text_input("Code")
+        else:
+            code = c1.text_input("Code", disabled=True)
+
         date_input = c1.date_input("Date", value=date.today())
         arret = c1.text_input("Arrêt déclaré par")
         postes = read_options("options_poste_de_charge")
@@ -460,20 +466,27 @@ def page_bons(page_name: str):
                 opts.append(new_poste.strip())
                 write_options("options_poste_de_charge", opts)
                 poste = new_poste.strip()
+
         heure_declaration = c2.text_input("Heure de déclaration")
         machine = c2.selectbox("Machine arrêtée?", ["","Oui","Non"])
         debut = c3.text_input("Heure début")
         fin = c3.text_input("Heure fin")
         technicien = c3.text_input("Technicien")
+
+        # === Description problème (editable seulement pour Production) ===
         descs = read_options("options_description_probleme")
-        description = st.selectbox("Description", [""] + descs + ["Autres..."])
-        if description == "Autres...":
-            new_desc = st.text_input("Ajouter nouvelle description")
-            if new_desc:
-                optsd = read_options("options_description_probleme")
-                optsd.append(new_desc.strip())
-                write_options("options_description_probleme", optsd)
-                description = new_desc.strip()
+        if page_name == "Production":
+            description = st.selectbox("Description", [""] + descs + ["Autres..."])
+            if description == "Autres...":
+                new_desc = st.text_input("Ajouter nouvelle description")
+                if new_desc:
+                    optsd = read_options("options_description_probleme")
+                    optsd.append(new_desc.strip())
+                    write_options("options_description_probleme", optsd)
+                    description = new_desc.strip()
+        else:
+            description = st.selectbox("Description", descs, disabled=True)
+
         action = st.text_input("Action")
         pdr_used = st.text_input("PDR utilisée (code)")
         observation = st.text_input("Observation")
