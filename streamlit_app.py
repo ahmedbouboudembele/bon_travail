@@ -312,3 +312,8 @@ if not users:
                 st.success("Manager initial créé — connectez-vous.")
                 st.rerun()
 #==============================================================================================================
+
+# Menu latéral pour naviguer entre les pages
+st.sidebar.markdown("---")
+menu = st.sidebar.radio("Pages", ["Dashboard", "Production", "Maintenance", "Qualité", "Pièces (PDR)", "Export Excel"])
+#==============================================================================================================
