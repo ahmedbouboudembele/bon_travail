@@ -244,3 +244,71 @@ def create_user(username: str, password: str, role: str) -> None:
         raise ValueError("Nom d'utilisateur déjà existant")
     users.append({"username": username, "password_hash": hash_password(password), "role": role})
     write_users(users)
+
+#===========================================================================================
+
+# Initialisation de l'état de session
+if "user" not in st.session_state:
+    st.session_state.user = None
+    st.session_state.role = None
+
+# Si l'utilisateur est déjà connecté, proposer de se déconnecter
+if st.session_state.user:
+    st.sidebar.write(f"Connecté en tant que **{st.session_state.user}** ({st.session_state.role})")
+    if st.sidebar.button("Se déconnecter"):
+        st.session_state.user = None
+        st.session_state.role = None
+        st.rerun()  # Remplace st.experimental_rerun()
+
+else:
+    # Formulaire de connexion
+    st.sidebar.header("Connexion")
+    login_user = st.sidebar.text_input("Nom d'utilisateur", key="login_user")
+    login_pwd = st.sidebar.text_input("Mot de passe", key="login_pwd", type="password")
+    if st.sidebar.button("Se connecter"):
+        u = get_user(login_user)
+        if not u or u.get("password_hash") != hash_password(login_pwd):
+            st.sidebar.error("Identifiants invalides.")
+        else:
+            st.session_state.user = u["username"]
+            st.session_state.role = u["role"]
+            st.sidebar.success(f"Bienvenue {u['username']} ({u['role']})")
+
+# Création de compte (après vérification du manager)
+st.sidebar.markdown("---")
+st.sidebar.write("Créer un compte (nécessite vérification manager)")
+
+mgr_name = st.sidebar.text_input("Manager (username)", key="mgr_name")
+mgr_pwd = st.sidebar.text_input("Manager (mdp)", key="mgr_pwd", type="password")
+
+if st.sidebar.button("Vérifier manager"):
+    mgr = get_user(mgr_name)
+    if not mgr or mgr.get("password_hash") != hash_password(mgr_pwd) or mgr.get("role") != "manager":
+        st.sidebar.error("Vérification échouée.")
+    else:
+        st.sidebar.success("Manager vérifié — complétez la création.")
+        new_user = st.sidebar.text_input("Nouveau utilisateur", key="new_user")
+        new_pwd = st.sidebar.text_input("Nouveau mdp", key="new_pwd", type="password")
+        new_role = st.sidebar.selectbox("Rôle", ["production","maintenance","qualite","manager"], key="new_role")
+        if st.sidebar.button("Créer utilisateur"):
+            try:
+                create_user(new_user.strip(), new_pwd, new_role)
+                st.sidebar.success("Utilisateur créé.")
+            except Exception as e:
+                st.sidebar.error(str(e))
+
+# Si aucun utilisateur (premier lancement), création manager initial
+users = read_users()
+if not users:
+    st.warning("Aucun utilisateur trouvé — créez un manager initial.")
+    with st.form("init_mgr"):
+        mgru = st.text_input("Manager username", value="manager")
+        mgrp = st.text_input("Manager password", type="password")
+        if st.form_submit_button("Créer manager initial"):
+            if not mgru or not mgrp:
+                st.error("Remplissez les champs.")
+            else:
+                create_user(mgru.strip(), mgrp, "manager")
+                st.success("Manager initial créé — connectez-vous.")
+                st.rerun()
+#==============================================================================================================
