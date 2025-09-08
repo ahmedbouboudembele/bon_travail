@@ -50,7 +50,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Work Order Management — (Stockage local JSON)")
+st.title("Work Order Management")
 
 # Répertoire de données local
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
