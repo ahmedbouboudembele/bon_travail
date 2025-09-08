@@ -317,3 +317,20 @@ if not users:
 st.sidebar.markdown("---")
 menu = st.sidebar.radio("Pages", ["Dashboard", "Production", "Maintenance", "Qualité", "Pièces (PDR)", "Export Excel"])
 #==============================================================================================================
+
+def page_dashboard():
+    st.header("Tableau de bord — Pareto & résumé")
+    bons = read_bons()
+    if not bons:
+        st.info("Aucun bon enregistré.")
+        return
+    df = pd.DataFrame(bons)
+    c1, c2 = st.columns([3, 1])
+    period = c1.selectbox("Période pour Pareto", ["day", "week", "month"])
+    topn = c2.number_input("Top N", min_value=1, max_value=10, value=3)
+    # Génère et affiche le Pareto en utilisant matplotlib
+    plot_pareto(df, period=period, top_n_labels=topn)
+    st.markdown("---")
+    st.subheader("Aperçu (derniers d'abord)")
+    st.dataframe(df.sort_values(by="date", ascending=False), height=320)
+#==========================================================================================================================
