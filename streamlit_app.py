@@ -294,14 +294,16 @@ def create_user(username: str, password: str, role: str) -> None:
 if "user" not in st.session_state:
     st.session_state.user = None
     st.session_state.role = None
+if "manager_verified" not in st.session_state:
+    st.session_state.manager_verified = False  # état vérification manager
 
-# Si l'utilisateur est déjà connecté, proposer de se déconnecter
+# Si l'utilisateur est déjà connecté
 if st.session_state.user:
     st.sidebar.write(f"Connecté en tant que **{st.session_state.user}** ({st.session_state.role})")
     if st.sidebar.button("Se déconnecter"):
         st.session_state.user = None
         st.session_state.role = None
-        st.rerun()  # Remplace st.experimental_rerun()
+        st.rerun()
 
 else:
     # Formulaire de connexion
@@ -316,29 +318,39 @@ else:
             st.session_state.user = u["username"]
             st.session_state.role = u["role"]
             st.sidebar.success(f"Bienvenue {u['username']} ({u['role']})")
+            st.rerun()
 
-# Création de compte (après vérification du manager)
+# Création de compte (après vérification manager)
 st.sidebar.markdown("---")
-st.sidebar.write("Créer un compte (nécessite vérification manager)")
+st.sidebar.subheader("Créer un compte")
 
-mgr_name = st.sidebar.text_input("Manager (username)", key="mgr_name")
-mgr_pwd = st.sidebar.text_input("Manager (mdp)", key="mgr_pwd", type="password")
+if not st.session_state.manager_verified:
+    mgr_name = st.sidebar.text_input("Manager (username)", key="mgr_name")
+    mgr_pwd = st.sidebar.text_input("Manager (mdp)", key="mgr_pwd", type="password")
 
-if st.sidebar.button("Vérifier manager"):
-    mgr = get_user(mgr_name)
-    if not mgr or mgr.get("password_hash") != hash_password(mgr_pwd) or mgr.get("role") != "manager":
-        st.sidebar.error("Vérification échouée.")
-    else:
-        st.sidebar.success("Manager vérifié — complétez la création.")
-        new_user = st.sidebar.text_input("Nouveau utilisateur", key="new_user")
-        new_pwd = st.sidebar.text_input("Nouveau mdp", key="new_pwd", type="password")
-        new_role = st.sidebar.selectbox("Rôle", ["production","maintenance","qualite","manager"], key="new_role")
-        if st.sidebar.button("Créer utilisateur"):
-            try:
-                create_user(new_user.strip(), new_pwd, new_role)
-                st.sidebar.success("Utilisateur créé.")
-            except Exception as e:
-                st.sidebar.error(str(e))
+    if st.sidebar.button("Vérifier manager"):
+        mgr = get_user(mgr_name)
+        if not mgr or mgr.get("password_hash") != hash_password(mgr_pwd) or mgr.get("role") != "manager":
+            st.sidebar.error("Vérification échouée.")
+        else:
+            st.sidebar.success("Manager vérifié — vous pouvez créer un utilisateur.")
+            st.session_state.manager_verified = True
+            st.rerun()
+
+else:
+    new_user = st.sidebar.text_input("Nouveau utilisateur", key="new_user")
+    new_pwd = st.sidebar.text_input("Nouveau mdp", key="new_pwd", type="password")
+    new_role = st.sidebar.selectbox("Rôle", ["production","maintenance","qualite","manager"], key="new_role")
+    if st.sidebar.button("Créer utilisateur"):
+        try:
+            create_user(new_user.strip(), new_pwd, new_role)
+            st.sidebar.success("Utilisateur créé avec succès ✅")
+            st.session_state.manager_verified = False  # reset après création
+        except Exception as e:
+            st.sidebar.error(str(e))
+    if st.sidebar.button("Annuler"):
+        st.session_state.manager_verified = False
+        st.rerun()
 
 # Si aucun utilisateur (premier lancement), création manager initial
 users = read_users()
@@ -354,6 +366,7 @@ if not users:
                 create_user(mgru.strip(), mgrp, "manager")
                 st.success("Manager initial créé — connectez-vous.")
                 st.rerun()
+
 #==============================================================================================================
 
 # Menu latéral pour naviguer entre les pages
