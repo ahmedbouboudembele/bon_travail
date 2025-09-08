@@ -550,7 +550,7 @@ def page_bons(page_name: str):
             try:
                 default_date_obj = datetime.strptime(date_val, "%Y-%m-%d").date()
             except Exception:
-            default_date_obj = date.today()
+                default_date_obj = date.today()
         elif isinstance(date_val, date):
             default_date_obj = date_val
         else:
