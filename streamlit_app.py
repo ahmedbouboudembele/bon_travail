@@ -43,7 +43,7 @@ st.markdown(
 )
 
 # Titre principal
-st.title("Work Order Management — (Version Final)")
+st.title("Work Order Management")
 
 # ---------------------------
 # Data files
