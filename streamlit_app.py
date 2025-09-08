@@ -117,6 +117,18 @@ def ensure_data_files():
 
 ensure_data_files()
 
+def read_options(name: str) -> List[str]:
+    path = FILES.get(name)
+    if path and os.path.exists(path):
+        return load_json(path) or []
+    return []
+
+def write_options(name: str, opts: List[str]):
+    path = FILES.get(name)
+    if path:
+        atomic_write(path, opts)
+
+
 # ---------------------------
 # Hash mot de passe
 # ---------------------------
@@ -412,15 +424,17 @@ else:
 if not users:
     st.warning("Aucun utilisateur trouvé — créez un manager initial.")
     with st.form("init_mgr_form"):
-        mgru = st.text_input("Manager username", value="manager", key="init_mgr_user")
-        mgrp = st.text_input("Manager password", type="password", key="init_mgr_pwd")
-        if st.form_submit_button("Créer manager initial"):
-            if not mgru or not mgrp:
-                st.error("Remplissez les champs.")
-            else:
-                create_user(mgru.strip(), mgrp, "manager")
-                st.success("Manager initial créé — connectez-vous.")
-                st.rerun()
+    mgru = st.text_input("Manager username", value="manager", key="init_mgr_user")
+    mgrp = st.text_input("Manager password", type="password", key="init_mgr_pwd")
+    submitted = st.form_submit_button("Créer manager initial")   # <-- OBLIGATOIRE
+    if submitted:
+        if not mgru or not mgrp:
+            st.error("Remplissez les champs.")
+        else:
+            create_user(mgru.strip(), mgrp, "manager")
+            st.success("Manager initial créé — connectez-vous.")
+            st.rerun()
+
 
 # ---------------------------
 # Sidebar menu (Pages)
