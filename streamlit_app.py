@@ -635,46 +635,47 @@ def page_bons(page_name: str):
             except Exception as e:
                 st.error(str(e))
 
-    # --------------------------
-    # Recherche & Liste
-    # --------------------------
-    st.markdown("---")
-    st.subheader("Recherche & Liste")
-    search_by = st.selectbox("Rechercher par", ["Code","Date","Poste de charge","Dpt"])
-    term = st.text_input("Terme de recherche", key=f"search_{page_name}")
-    if st.button("Rechercher", key=f"btn_search_{page_name}"):
-        res = []
-        for r in read_bons():
-            col = ""
-            if search_by == "Code":
-                col = r.get("code","")
-            elif search_by == "Date":
-                col = r.get("date","")
-            elif search_by == "Poste de charge":
-                col = r.get("poste_de_charge","")
-            else:
-                col = r.get("dpt_production","") + r.get("dpt_maintenance","") + r.get("dpt_qualite","")
-            if term.lower() in str(col).lower():
-                res.append(r)
-        if not res:
-            st.info("Aucun enregistrement trouvé.")
+# --------------------------
+# Recherche & Liste
+# --------------------------
+st.markdown("---")
+st.subheader("Recherche & Liste")
+search_by = st.selectbox("Rechercher par", ["Code","Date","Poste de charge","Dpt"], key=f"search_by_{page_name}")
+term = st.text_input("Terme de recherche", key=f"term_search_{page_name}")
+if st.button("Rechercher", key=f"btn_search_{page_name}"):
+    res = []
+    for r in read_bons():
+        col = ""
+        if search_by == "Code":
+            col = r.get("code","")
+        elif search_by == "Date":
+            col = r.get("date","")
+        elif search_by == "Poste de charge":
+            col = r.get("poste_de_charge","")
         else:
-            st.dataframe(pd.DataFrame(res), height=250)
-
-    st.subheader("Tous les bons")
-    all_df = pd.DataFrame(read_bons())
-    if not all_df.empty:
-        st.dataframe(all_df.sort_values(by="date", ascending=False), height=300)
-        sel = st.selectbox("Sélectionner un code", options=[""] + all_df["code"].astype(str).tolist(), key=f"sel2_{page_name}")
-        if sel:
-            if st.button("Afficher JSON", key=f"showjson_{page_name}"):
-                st.json(get_bon_by_code(sel))
-            if st.button("Supprimer", key=f"del_{page_name}"):
-                delete_bon(sel)
-                st.success("Supprimé")
-                st.experimental_rerun()
+            col = r.get("dpt_production","") + r.get("dpt_maintenance","") + r.get("dpt_qualite","")
+        if term.lower() in str(col).lower():
+            res.append(r)
+    if not res:
+        st.info("Aucun enregistrement trouvé.")
     else:
-        st.info("Aucun bon à afficher.")
+        st.dataframe(pd.DataFrame(res), height=250)
+
+st.subheader("Tous les bons")
+all_df = pd.DataFrame(read_bons())
+if not all_df.empty:
+    st.dataframe(all_df.sort_values(by="date", ascending=False), height=300)
+    sel = st.selectbox("Sélectionner un code", options=[""] + all_df["code"].astype(str).tolist(), key=f"sel_code_{page_name}")
+    if sel:
+        if st.button("Afficher JSON", key=f"showjson_{page_name}"):
+            st.json(get_bon_by_code(sel))
+        if st.button("Supprimer", key=f"del_{page_name}"):
+            delete_bon(sel)
+            st.success("Supprimé")
+            st.experimental_rerun()
+else:
+    st.info("Aucun bon à afficher.")
+
 
     st.markdown("---")
     st.subheader("Recherche & Liste")
