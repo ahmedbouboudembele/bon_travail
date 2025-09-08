@@ -492,14 +492,19 @@ def page_bons(page_name: str):
     col_load1, col_load2 = st.columns([3,1])
     sel_key = f"sel_{page_name}"
     sel_code = col_load1.selectbox("Charger un bon existant (optionnel)", options=[""] + codes, key=sel_key)
-    if col_load2.button("Charger", key=f"btn_load_{page_name}") and sel_code:
-        bon = get_bon_by_code(sel_code)
-        if bon:
-            load_bon_into_session(bon, page_name)
+    with st.form(f"form_load_{page_name}"):
+        sel_code = st.selectbox("Charger un bon existant", options=[""] + codes, key=f"sel_{page_name}")
+        submitted_load = st.form_submit_button("Charger")
+        submitted_new = st.form_submit_button("Nouveau")
+        if submitted_load and sel_code:
+            bon = get_bon_by_code(sel_code)
+            if bon:
+                load_bon_into_session(bon, page_name)
+                st.rerun()
+        elif submitted_new:
+            clear_form_session(page_name)
             st.rerun()
-    if col_load2.button("Nouveau", key=f"btn_new_{page_name}"):
-        clear_form_session(page_name)
-        st.rerun()
+
 
     # Définition des champs éditables par fenêtre
     production_allowed = {
@@ -540,11 +545,17 @@ def page_bons(page_name: str):
 
         # Date (string -> date)
         date_key = f"{page_name}_form_date"
-        date_default = st.session_state.get(date_key, date.today().strftime("%Y-%m-%d"))
-        try:
-            default_date_obj = datetime.strptime(date_default, "%Y-%m-%d").date()
+        date_val = st.session_state.get(date_key)
+        if isinstance(date_val, str):
+            try:
+                default_date_obj = datetime.strptime(date_val, "%Y-%m-%d").date()
         except Exception:
             default_date_obj = date.today()
+        elif isinstance(date_val, date):
+            default_date_obj = date_val
+        else:
+            default_date_obj = date.today()
+
         date_input = c1.date_input("Date", value=default_date_obj, key=date_key, disabled=("date" not in editable_set))
 
         # Arrêt déclaré par
