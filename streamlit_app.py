@@ -460,3 +460,22 @@ def page_export():
     except Exception as e:
         st.error(str(e))
 #========================================================================================================
+
+# Affichage de la page active selon le menu
+if menu == "Dashboard":
+    page_dashboard()
+elif menu == "Production":
+    page_bons("Production")
+elif menu == "Maintenance":
+    page_bons("Maintenance")
+elif menu == "Qualité":
+    page_bons("Qualité")
+elif menu == "Pièces (PDR)":
+    page_pdr()
+elif menu == "Export Excel":
+    page_export()
+
+# Footer / note de bas de page
+st.sidebar.markdown("---")
+st.sidebar.caption("⚠️ Données stockées localement sur l'instance Streamlit. Elles peuvent disparaître après redémarrage/redeploy.")
+#======================================================================================================================================
