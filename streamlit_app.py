@@ -461,19 +461,12 @@ def page_bons(page_name: str):
         st.experimental_rerun()
 
     # --------------------------
-    # Définition des champs éditables par fenêtre
+    # Champs éditables selon page
     # --------------------------
-    # Champs autorisés (editable) selon la demande :
-    production_allowed = {
-        "code", "heure_declaration", "description_probleme", "arret_declare_par",
-        "poste_de_charge", "machine_arreter", "resultat", "condition_acceptation", "dpt_production"
-    }
-    maintenance_allowed = {
-        "heure_debut_intervention", "heure_fin_intervention", "technicien", "observation", "dpt_maintenance"
-    }
-    qualite_allowed = {
-        "heure_debut_intervention", "heure_fin_intervention", "technicien", "observation", "dpt_qualite"
-    }
+    production_allowed = {"code","heure_declaration","description_probleme","arret_declare_par",
+                          "poste_de_charge","machine_arreter","resultat","condition_acceptation","dpt_production"}
+    maintenance_allowed = {"heure_debut_intervention","heure_fin_intervention","technicien","observation","dpt_maintenance"}
+    qualite_allowed = {"heure_debut_intervention","heure_fin_intervention","technicien","observation","dpt_qualite"}
 
     if page_name.lower().startswith("production"):
         editable_set = production_allowed
@@ -482,13 +475,158 @@ def page_bons(page_name: str):
     elif page_name.lower().startswith("qualit") or page_name.lower().startswith("qualité"):
         editable_set = qualite_allowed
     else:
-        editable_set = set()  # par défaut tout grisé
+        editable_set = set()
 
-    # Initialiser session state pour le formulaire si pas présent
+    # Initialiser session state si nécessaire
     for k in BON_COLUMNS:
         sk = f"form_{k}"
         if sk not in st.session_state:
             st.session_state[sk] = ""
+
+    # --------------------------
+    # Formulaire
+    # --------------------------
+    with st.form("form_bon", clear_on_submit=False):
+        c1,c2,c3 = st.columns(3)
+
+        # Exemple champ
+        code = c1.text_input("Code", value=st.session_state.get("form_code",""), disabled=("code" not in editable_set))
+        date_default = st.session_state.get("form_date", date.today().strftime("%Y-%m-%d"))
+        try:
+            default_date_obj = datetime.strptime(date_default, "%Y-%m-%d").date()
+        except:
+            default_date_obj = date.today()
+        date_input = c1.date_input("Date", value=default_date_obj, disabled=("date" not in editable_set))
+        arret = c1.text_input("Arrêt déclaré par", value=st.session_state.get("form_arret_declare_par",""), disabled=("arret_declare_par" not in editable_set))
+
+        postes = read_options("options_poste_de_charge")
+        poste_default = st.session_state.get("form_poste_de_charge","")
+        if "poste_de_charge" in editable_set:
+            poste = c2.selectbox("Poste de charge", [""] + postes + ["Autres..."], index=([""] + postes + ["Autres..."]).index(poste_default) if poste_default in ([""]+postes+["Autres..."]) else 0)
+            if poste == "Autres...":
+                new_poste = c2.text_input("Ajouter nouveau poste")
+                if new_poste:
+                    opts = read_options("options_poste_de_charge")
+                    opts.append(new_poste.strip())
+                    write_options("options_poste_de_charge", opts)
+                    poste = new_poste.strip()
+        else:
+            c2.selectbox("Poste de charge", [""] + postes, index=([""]+postes).index(poste_default) if poste_default in ([""]+postes) else 0, disabled=True)
+            poste = poste_default
+
+        # Heures, technicien, description, action, pdr, observation, résultat, condition, dpts
+        heure_declaration = c2.text_input("Heure de déclaration", value=st.session_state.get("form_heure_declaration",""), disabled=("heure_declaration" not in editable_set))
+        machine = c2.selectbox("Machine arrêtée?", ["","Oui","Non"], index=(["","Oui","Non"].index(st.session_state.get("form_machine_arreter","")) if st.session_state.get("form_machine_arreter","") in ["","Oui","Non"] else 0), disabled=("machine_arreter" not in editable_set))
+        debut = c3.text_input("Heure début", value=st.session_state.get("form_heure_debut_intervention",""), disabled=("heure_debut_intervention" not in editable_set))
+        fin = c3.text_input("Heure fin", value=st.session_state.get("form_heure_fin_intervention",""), disabled=("heure_fin_intervention" not in editable_set))
+        technicien = c3.text_input("Technicien", value=st.session_state.get("form_technicien",""), disabled=("technicien" not in editable_set))
+
+        descs = read_options("options_description_probleme")
+        desc_default = st.session_state.get("form_description_probleme","")
+        if "description_probleme" in editable_set:
+            description = st.selectbox("Description", [""] + descs + ["Autres..."], index=([""]+descs+["Autres..."]).index(desc_default) if desc_default in ([""]+descs+["Autres..."]) else 0)
+            if description == "Autres...":
+                new_desc = st.text_input("Ajouter nouvelle description")
+                if new_desc:
+                    optsd = read_options("options_description_probleme")
+                    optsd.append(new_desc.strip())
+                    write_options("options_description_probleme", optsd)
+                    description = new_desc.strip()
+        else:
+            st.selectbox("Description", [""] + descs, index=([""]+descs).index(desc_default) if desc_default in ([""]+descs) else 0, disabled=True)
+            description = desc_default
+
+        action = st.text_input("Action", value=st.session_state.get("form_action",""), disabled=("action" not in editable_set))
+        pdr_used = st.text_input("PDR utilisée (code)", value=st.session_state.get("form_pdr_utilisee",""), disabled=("pdr_utilisee" not in editable_set))
+        observation = st.text_input("Observation", value=st.session_state.get("form_observation",""), disabled=("observation" not in editable_set))
+        resultat = st.selectbox("Résultat", ["","Accepter","Refuser","Accepter avec condition"], index=(["","Accepter","Refuser","Accepter avec condition"].index(st.session_state.get("form_resultat","")) if st.session_state.get("form_resultat","") in ["","Accepter","Refuser","Accepter avec condition"] else 0), disabled=("resultat" not in editable_set))
+        cond = st.text_input("Condition d'acceptation", value=st.session_state.get("form_condition_acceptation",""), disabled=("condition_acceptation" not in editable_set))
+
+        dpt_m = st.selectbox("Dpt Maintenance", ["","Valider","Non Valider"], index=(["","Valider","Non Valider"].index(st.session_state.get("form_dpt_maintenance","")) if st.session_state.get("form_dpt_maintenance","") in ["","Valider","Non Valider"] else 0), disabled=("dpt_maintenance" not in editable_set))
+        dpt_q = st.selectbox("Dpt Qualité", ["","Valider","Non Valider"], index=(["","Valider","Non Valider"].index(st.session_state.get("form_dpt_qualite","")) if st.session_state.get("form_dpt_qualite","") in ["","Valider","Non Valider"] else 0), disabled=("dpt_qualite" not in editable_set))
+        dpt_p = st.selectbox("Dpt Production", ["","Valider","Non Valider"], index=(["","Valider","Non Valider"].index(st.session_state.get("form_dpt_production","")) if st.session_state.get("form_dpt_production","") in ["","Valider","Non Valider"] else 0), disabled=("dpt_production" not in editable_set))
+
+        submitted = st.form_submit_button("Ajouter / Mettre à jour")
+        if submitted:
+            code_v = code.strip()
+            date_v = date_input.strftime("%Y-%m-%d")
+            row = {k: "" for k in BON_COLUMNS}
+            row.update({
+                "code": code_v,
+                "date": date_v,
+                "arret_declare_par": arret,
+                "poste_de_charge": poste,
+                "heure_declaration": heure_declaration,
+                "machine_arreter": machine,
+                "heure_debut_intervention": debut,
+                "heure_fin_intervention": fin,
+                "technicien": technicien,
+                "description_probleme": description,
+                "action": action,
+                "pdr_utilisee": pdr_used,
+                "observation": observation,
+                "resultat": resultat,
+                "condition_acceptation": cond,
+                "dpt_maintenance": dpt_m,
+                "dpt_qualite": dpt_q,
+                "dpt_production": dpt_p
+            })
+            try:
+                if code_v == "":
+                    st.error("Le champ Code est requis.")
+                else:
+                    if any(c.get("code","") == code_v for c in read_bons()):
+                        update_bon(code_v, row)
+                        st.success("Bon mis à jour.")
+                    else:
+                        add_bon(row)
+                        st.success("Bon ajouté.")
+                    load_bon_into_session(row)
+                    st.experimental_rerun()
+            except Exception as e:
+                st.error(str(e))
+
+    # --------------------------
+    # Recherche & Liste
+    # --------------------------
+    st.markdown("---")
+    st.subheader("Recherche & Liste")
+    search_by = st.selectbox("Rechercher par", ["Code","Date","Poste de charge","Dpt"], key=f"search_by_{page_name}")
+    term = st.text_input("Terme de recherche", key=f"term_search_{page_name}")
+    if st.button("Rechercher", key=f"btn_search_{page_name}"):
+        res = []
+        for r in read_bons():
+            col = ""
+            if search_by == "Code":
+                col = r.get("code","")
+            elif search_by == "Date":
+                col = r.get("date","")
+            elif search_by == "Poste de charge":
+                col = r.get("poste_de_charge","")
+            else:
+                col = r.get("dpt_production","") + r.get("dpt_maintenance","") + r.get("dpt_qualite","")
+            if term.lower() in str(col).lower():
+                res.append(r)
+        if not res:
+            st.info("Aucun enregistrement trouvé.")
+        else:
+            st.dataframe(pd.DataFrame(res), height=250)
+
+    st.subheader("Tous les bons")
+    all_df = pd.DataFrame(read_bons())
+    if not all_df.empty:
+        st.dataframe(all_df.sort_values(by="date", ascending=False), height=300)
+        sel = st.selectbox("Sélectionner un code", options=[""] + all_df["code"].astype(str).tolist(), key=f"sel_code_{page_name}")
+        if sel:
+            if st.button("Afficher JSON", key=f"showjson_{page_name}"):
+                st.json(get_bon_by_code(sel))
+            if st.button("Supprimer", key=f"del_{page_name}"):
+                delete_bon(sel)
+                st.success("Supprimé")
+                st.experimental_rerun()
+    else:
+        st.info("Aucun bon à afficher.")
+
 
     # --------------------------
     # Le formulaire
@@ -635,85 +773,8 @@ def page_bons(page_name: str):
             except Exception as e:
                 st.error(str(e))
 
-# --------------------------
-# Recherche & Liste
-# --------------------------
-st.markdown("---")
-st.subheader("Recherche & Liste")
-search_by = st.selectbox("Rechercher par", ["Code","Date","Poste de charge","Dpt"], key=f"search_by_{page_name}")
-term = st.text_input("Terme de recherche", key=f"term_search_{page_name}")
-if st.button("Rechercher", key=f"btn_search_{page_name}"):
-    res = []
-    for r in read_bons():
-        col = ""
-        if search_by == "Code":
-            col = r.get("code","")
-        elif search_by == "Date":
-            col = r.get("date","")
-        elif search_by == "Poste de charge":
-            col = r.get("poste_de_charge","")
-        else:
-            col = r.get("dpt_production","") + r.get("dpt_maintenance","") + r.get("dpt_qualite","")
-        if term.lower() in str(col).lower():
-            res.append(r)
-    if not res:
-        st.info("Aucun enregistrement trouvé.")
-    else:
-        st.dataframe(pd.DataFrame(res), height=250)
-
-st.subheader("Tous les bons")
-all_df = pd.DataFrame(read_bons())
-if not all_df.empty:
-    st.dataframe(all_df.sort_values(by="date", ascending=False), height=300)
-    sel = st.selectbox("Sélectionner un code", options=[""] + all_df["code"].astype(str).tolist(), key=f"sel_code_{page_name}")
-    if sel:
-        if st.button("Afficher JSON", key=f"showjson_{page_name}"):
-            st.json(get_bon_by_code(sel))
-        if st.button("Supprimer", key=f"del_{page_name}"):
-            delete_bon(sel)
-            st.success("Supprimé")
-            st.experimental_rerun()
-else:
-    st.info("Aucun bon à afficher.")
 
 
-    st.markdown("---")
-    st.subheader("Recherche & Liste")
-    search_by = st.selectbox("Rechercher par", ["Code","Date","Poste de charge","Dpt"])
-    term = st.text_input("Terme de recherche")
-    if st.button("Rechercher"):
-        res = []
-        for r in read_bons():
-            col = None
-            if search_by == "Code":
-                col = r.get("code","")
-            elif search_by == "Date":
-                col = r.get("date","")
-            elif search_by == "Poste de charge":
-                col = r.get("poste_de_charge","")
-            else:
-                col = r.get("dpt_production","") + r.get("dpt_maintenance","") + r.get("dpt_qualite","")
-            if term.lower() in str(col).lower():
-                res.append(r)
-        if not res:
-            st.info("Aucun enregistrement trouvé.")
-        else:
-            st.dataframe(pd.DataFrame(res), height=250)
-
-    st.subheader("Tous les bons")
-    all_df = pd.DataFrame(read_bons())
-    if not all_df.empty:
-        st.dataframe(all_df.sort_values(by="date", ascending=False), height=300)
-        sel = st.selectbox("Sélectionner un code", options=[""] + all_df["code"].astype(str).tolist())
-        if sel:
-            if st.button("Afficher JSON"):
-                st.json(get_bon_by_code(sel))
-            if st.button("Supprimer"):
-                delete_bon(sel)
-                st.success("Supprimé")
-                st.experimental_rerun()
-    else:
-        st.info("Aucun bon à afficher.")
 
 # PDR page
 def page_pdr():
