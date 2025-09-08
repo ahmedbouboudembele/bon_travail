@@ -404,3 +404,43 @@ def page_bons(page_name: str):
             except Exception as e:
                 st.error(str(e))
 #=======================================================================================================================
+
+def page_pdr():
+    st.header("Gestion des pièces de rechange (PDR)")
+    pdrs = read_pdr()
+    df_pdr = pd.DataFrame(pdrs) if pdrs else pd.DataFrame(columns=PDR_COLUMNS)
+    codes = df_pdr["code"].astype(str).tolist() if not df_pdr.empty else []
+
+    st.subheader("Ajouter / Modifier une pièce")
+    with st.form("pdr_form"):
+        code = st.text_input("Code", key="pdr_code")
+        remplacement = st.text_input("Remplacement", key="pdr_remplacement")
+        nom = st.text_input("Nom du composant", key="pdr_nom_composant")
+        quantite = st.number_input("Quantité", min_value=0, value=0, key="pdr_quantite")
+        submitted_pdr = st.form_submit_button("Enregistrer PDR")
+        if submitted_pdr:
+            try:
+                upsert_pdr({
+                    "code": code,
+                    "remplacement": remplacement,
+                    "nom_composant": nom,
+                    "quantite": quantite
+                })
+                st.success("PDR enregistrée.")
+            except Exception as e:
+                st.error(str(e))
+
+    st.subheader("Liste des pièces")
+    if df_pdr.empty:
+        st.info("Aucune pièce de rechange enregistrée.")
+    else:
+        st.dataframe(df_pdr, height=200)
+    # Suppression d'une pièce
+    st.subheader("Supprimer une pièce")
+    code_suppr = st.selectbox("Sélectionner le code à supprimer", options=[""] + codes)
+    if st.button("Supprimer"):
+        if code_suppr:
+            delete_pdr_by_code(code_suppr)
+            st.success(f"PDR {code_suppr} supprimée.")
+            st.rerun()
+#==========================================================================================================
