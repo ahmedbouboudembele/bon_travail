@@ -444,3 +444,19 @@ def page_pdr():
             st.success(f"PDR {code_suppr} supprimée.")
             st.rerun()
 #==========================================================================================================
+
+def page_export():
+    st.header("Export Excel des bons")
+    bons = read_bons()
+    if not bons:
+        st.info("Aucun bon à exporter.")
+        return
+    try:
+        excel_bytes = export_excel(bons)
+        st.download_button("Télécharger bon_travail_export.xlsx",
+                           data=excel_bytes,
+                           file_name="bon_travail_export.xlsx",
+                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    except Exception as e:
+        st.error(str(e))
+#========================================================================================================
