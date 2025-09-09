@@ -241,19 +241,53 @@ def update_bon(code: str, updates: Dict[str, Any]) -> None:
         raise KeyError("Code introuvable")
     write_bons(bons)
 
+import streamlit as st
+import pandas as pd
+from typing import Dict, Any
+
+# Exemple de colonnes et données
+BON_COLUMNS = ["dpt_production", "dpt_maintenance", "dpt_qualite", "autre_colonne"]
+bons = [
+    {"dpt_production": "Valider", "dpt_maintenance": "Valider", "dpt_qualite": "Valider", "autre_colonne": "X"},
+    {"dpt_production": "En cours", "dpt_maintenance": "", "dpt_qualite": "Valider", "autre_colonne": "Y"},
+    {"dpt_production": "", "dpt_maintenance": "", "dpt_qualite": "", "autre_colonne": "Z"},
+]
+
+# Fonction pour calculer l'avancement
 def compute_progress(bon: Dict[str, Any]) -> int:
-    """
-    Retourne un pourcentage d'avancement basé sur les colonnes remplies.
-    - 100% uniquement si dpt_production, dpt_maintenance et dpt_qualite == "Valider"
-    - Sinon, % = (colonnes non vides / total colonnes) * 100
-    """
     if bon.get("dpt_production") == "Valider" and \
        bon.get("dpt_maintenance") == "Valider" and \
        bon.get("dpt_qualite") == "Valider":
         return 100
-
     filled = sum(1 for k, v in bon.items() if v not in ("", None))
     return int((filled / len(BON_COLUMNS)) * 100)
+
+# Ajouter le pourcentage à chaque bon
+for bon in bons:
+    bon["Avancement (%)"] = compute_progress(bon)
+
+# Créer le dataframe
+df = pd.DataFrame(bons)
+
+# Fonction pour colorer toute la ligne
+def color_row(row):
+    val = row["Avancement (%)"]
+    if val <= 25:
+        color = '#FF6B6B'  # rouge
+    elif val <= 50:
+        color = '#FFA500'  # orange
+    elif val <= 75:
+        color = '#FFD93D'  # jaune
+    else:
+        color = '#6BCB77'  # vert
+    return ['background-color: {}'.format(color)]*len(row)
+
+# Appliquer le style
+df_styled = df.style.apply(color_row, axis=1)
+
+# Afficher dans Streamlit
+st.dataframe(df_styled)
+
 
 
 def delete_bon(code: str) -> None:
