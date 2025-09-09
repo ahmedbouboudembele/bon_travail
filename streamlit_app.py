@@ -665,10 +665,12 @@ def page_bons(page_name: str):
                 new_poste = c2.text_input("Ajouter nouveau poste", key=f"{page_name}_new_poste")
                 if new_poste:
                     opts = read_options("options_poste_de_charge")
-                    opts.append(new_poste.strip())
-                    write_options("options_poste_de_charge", opts)
+                    if new_poste.strip() not in opts:   # éviter doublon
+                        opts.append(new_poste.strip())
+                        write_options("options_poste_de_charge", opts)
                     st.session_state[poste_key] = new_poste.strip()
                     poste = new_poste.strip()
+                    st.success(f"Nouveau poste '{new_poste.strip()}' ajouté à la liste.")
         else:
             _idx = ([""] + postes).index(poste_default) if poste_default in ([""]+postes) else 0
             c2.selectbox("Poste de charge", [""] + postes, index=_idx, disabled=True, key=f"{poste_key}_ro")
