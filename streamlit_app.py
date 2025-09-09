@@ -320,8 +320,6 @@ def create_user(username: str, password: str, role: str):
 # plot_pareto_par_probleme
 # ---------------------------
 
-Pareto doit être tracé en fonction de la description pour savoir quel type de problème est le plus récurent plutot que par le nombre d’intervention.
-
 
 # ---------------------------
 # plot_pareto (défini avant usage)
