@@ -324,7 +324,7 @@ def create_user(username: str, password: str, role: str):
 # ---------------------------
 # plot_pareto (défini avant usage)
 # ---------------------------
-def plot_pareto1(df: pd.DataFrame, period: str = "day", top_n_labels: int = 3):
+def plot_pareto(df: pd.DataFrame, period: str = "day", top_n_labels: int = 3):
     s = pd.to_datetime(df['date'], errors='coerce').dropna()
     if s.empty:
         st.info("Aucune date valide pour tracer le Pareto.")
@@ -386,7 +386,7 @@ def plot_pareto1(df: pd.DataFrame, period: str = "day", top_n_labels: int = 3):
 # ---------------------------
 # plot_pareto (par type de problème avec filtre)
 # ---------------------------
-def plot_pareto(df: pd.DataFrame, top_n_labels: int = 5):
+def plot_paretoo(df: pd.DataFrame, top_n_labels: int = 5):
     if "description_probleme" not in df.columns:
         st.warning("La colonne 'description_probleme' est absente des données.")
         return
@@ -626,8 +626,8 @@ def page_dashboard():
     c1, c2 = st.columns([3,1])
     period = c1.selectbox("Période pour Pareto", ["day","week","month"], key="dash_period")
     topn = c2.number_input("Top N", min_value=1, max_value=10, value=3, key="dash_topn")
-    plot_pareto1(df,period=periode top_n_labels=topn)
-    plot_pareto(df, top_n_labels=topn)
+    plot_pareto(df,period=periode top_n_labels=topn)
+    plot_paretoo(df, top_n_labels=topn)
     st.markdown("---")
     st.dataframe(df.sort_values(by="date", ascending=False), height=320)
     st.subheader("Aperçu (derniers d'abord)")
