@@ -626,7 +626,7 @@ def page_dashboard():
     c1, c2 = st.columns([3,1])
     period = c1.selectbox("Période pour Pareto", ["day","week","month"], key="dash_period")
     topn = c2.number_input("Top N", min_value=1, max_value=10, value=3, key="dash_topn")
-    plot_pareto(df,period=periode ,top_n_labels=topn)
+    plot_pareto(df,period=period, top_n_labels=topn)
     plot_paretoo(df, top_n_labels=topn)
     st.markdown("---")
     st.dataframe(df.sort_values(by="date", ascending=False), height=320)
