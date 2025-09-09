@@ -248,7 +248,6 @@ from typing import Dict, Any
 
 from typing import Dict, Any, Tuple
 
-BON_COLUMNS = ["dpt_production", "dpt_maintenance", "dpt_qualite", "autres"]
 
 def compute_progress(bon: Dict[str, Any]) -> Tuple[int, str]:
     """
