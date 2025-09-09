@@ -317,28 +317,19 @@ def create_user(username: str, password: str, role: str):
     write_users(users)
 
 # ---------------------------
-# plot_pareto (défini avant usage)
+# plot_pareto_par_probleme
 # ---------------------------
-def plot_pareto(df: pd.DataFrame, period: str = "day", top_n_labels: int = 3):
-    s = pd.to_datetime(df['date'], errors='coerce').dropna()
-    if s.empty:
-        st.info("Aucune date valide pour tracer le Pareto.")
+def plot_pareto_par_probleme(df: pd.DataFrame, top_n_labels: int = 5):
+    if "description" not in df.columns:
+        st.warning("La colonne 'description' est absente des données.")
         return
-    if period == "day":
-        groups = s.dt.strftime("%Y-%m-%d")
-        xlabel = "Jour"
-    elif period == "week":
-        groups = s.dt.strftime("%Y-W%U")
-        xlabel = "Semaine"
-    else:
-        groups = s.dt.strftime("%Y-%m")
-        xlabel = "Mois"
 
-    counts = groups.value_counts().sort_values(ascending=False)
+    counts = df["description"].dropna().astype(str).value_counts().sort_values(ascending=False)
     total = counts.sum()
     if total == 0:
-        st.info("Pas assez de données.")
+        st.info("Pas assez de données pour tracer le Pareto.")
         return
+
     cum_pct = 100 * counts.cumsum() / total
 
     fig, ax1 = plt.subplots(figsize=(10,4))
@@ -351,9 +342,9 @@ def plot_pareto(df: pd.DataFrame, period: str = "day", top_n_labels: int = 3):
     bars = ax1.bar(x, counts.values, color=colors, edgecolor="#2b2b2b", linewidth=0.2)
     ax1.set_xticks(x)
     ax1.set_xticklabels(counts.index.tolist(), rotation=45, ha='right', fontsize=9)
-    ax1.set_ylabel("Nombre d'interventions")
-    ax1.set_xlabel(xlabel)
-    ax1.set_title(f"Pareto ({period}) - total = {total}", fontsize=12, weight="bold")
+    ax1.set_ylabel("Nombre de cas")
+    ax1.set_xlabel("Type de problème")
+    ax1.set_title(f"Pareto des problèmes récurrents (total = {total})", fontsize=12, weight="bold")
     ax1.grid(axis="y", alpha=0.12)
 
     ax2 = ax1.twinx()
@@ -363,19 +354,23 @@ def plot_pareto(df: pd.DataFrame, period: str = "day", top_n_labels: int = 3):
     ax2.tick_params(axis='y', labelcolor='#ff7f0e')
     ax2.axhline(80, color='grey', linestyle='--', alpha=0.6)
 
-    # annotate top
+    # Annoter seulement les top_n_labels
     top = counts.head(top_n_labels)
     for idx, (label, val) in enumerate(counts.items()):
         if idx < top_n_labels:
             pct = val/total*100
-            ax1.text(idx, val + max(counts.values)*0.02, f"{val} ({pct:.1f}%)", ha='center', fontsize=9, bbox=dict(boxstyle="round", alpha=0.18))
+            ax1.text(idx, val + max(counts.values)*0.02,
+                     f"{val} ({pct:.1f}%)",
+                     ha='center', fontsize=9,
+                     bbox=dict(boxstyle="round", alpha=0.18))
 
     plt.tight_layout()
     st.pyplot(fig)
 
-    st.markdown("**Périodes les plus impactées :**")
+    st.markdown("**Problèmes les plus fréquents :**")
     for i, (label, val) in enumerate(top.items(), start=1):
-        st.write(f"{i}. **{label}** — {val} interventions — {val/total*100:.1f}%")
+        st.write(f"{i}. **{label}** — {val} cas — {val/total*100:.1f}%")
+
 
 # ---------------------------
 # Export Excel utilitaire (page d'export possible)
