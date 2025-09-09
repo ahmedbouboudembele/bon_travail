@@ -634,24 +634,25 @@ def page_dashboard():
 
     df = pd.DataFrame(bons)
 
-    # Colonnes affichées dans le tableau résumé (ordre souhaité)
+    # Colonnes affichées dans le tableau résumé
     display_cols = ["code", "date", "dpt_production", "dpt_maintenance", "dpt_qualite"]
 
     c1, c2 = st.columns([3, 1])
-    # Top N labels pour les deux paretos
+    # Choix du Top N
     topn = c2.number_input("Top N", min_value=1, max_value=10, value=3, key="dash_topn")
 
     # ---------------------------
-    # Affichage côte à côte des 2 Pareto
+    # Analyse Pareto
     # ---------------------------
     st.markdown("### Analyse Pareto")
     col_p1, col_p2 = st.columns(2)
 
     with col_p1:
-        st.markdown("**Pareto par période (jours/semaines/mois)**")
+        st.markdown("**Pareto par période**")
+        # Sélecteur de période
+        period = st.selectbox("Filtrer par période :", ["day", "week", "month"], key="pareto_period")
         try:
-            # on fixe la période par défaut à "month" pour plus de lisibilité
-            plot_pareto(df, period="month", top_n_labels=topn)
+            plot_pareto(df, period=period, top_n_labels=topn)
         except Exception as e:
             st.warning(f"Erreur dans plot_pareto : {e}")
 
@@ -675,15 +676,24 @@ def page_dashboard():
     # Calcul progression
     df["Progression (%)"] = df.apply(compute_progress, axis=1)
 
-    # Fonction de coloration
-    def color_progress(val):
-        if val == 100:
-            color = "#2ecc71"  # vert
-        elif val >= 50:
-            color = "#f1c40f"  # jaune
-        else:
-            color = "#e74c3c"  # rouge
-        return f"background-color: {color}; color: white;"
+    # Palette de 8 couleurs distinctes (progression par tranche)
+    palette = [
+        "#e74c3c",  # 0-12% rouge
+        "#e67e22",  # 13-25% orange
+        "#f39c12",  # 26-37% jaune foncé
+        "#f1c40f",  # 38-50% jaune
+        "#2ecc71",  # 51-62% vert clair
+        "#27ae60",  # 63-75% vert foncé
+        "#3498db",  # 76-87% bleu
+        "#2c3e50",  # 88-100% gris/bleu foncé
+    ]
+
+    def color_row(row):
+        val = row["Progression (%)"]
+        # découpage en 8 tranches
+        idx = min(val // 13, 7)  # 0-12, 13-25, ..., 88-100
+        color = palette[idx]
+        return [f"background-color: {color}; color: white;" for _ in row]
 
     st.markdown("### État d'avancement des bons")
     st.progress(int(df["Progression (%)"].mean()))  # moyenne globale
@@ -691,9 +701,10 @@ def page_dashboard():
     styled_df = (
         df[["code", "date", "dpt_production", "dpt_maintenance", "dpt_qualite", "Progression (%)"]]
         .sort_values(by="date", ascending=False)
-        .style.applymap(color_progress, subset=["Progression (%)"])
+        .style.apply(color_row, axis=1)
     )
     st.dataframe(styled_df, height=300)
+
 
 # ---------------------------
 # Page: Bons (Production / Maintenance / Qualité)
