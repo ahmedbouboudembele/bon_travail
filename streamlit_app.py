@@ -560,12 +560,11 @@ def page_dashboard():
         return
     df = pd.DataFrame(bons)
     c1, c2 = st.columns([3,1])
-    period = c1.selectbox("Période pour Pareto", ["day","week","month"], key="dash_period")
     topn = c2.number_input("Top N", min_value=1, max_value=10, value=3, key="dash_topn")
     plot_pareto(df, top_n_labels=topn)
     st.markdown("---")
     st.subheader("Aperçu (derniers d'abord)")
-    st.dataframe(df.sort_values(by="date", ascending=False), height=320)
+    
 
     # Calculer l'état d'avancement
     df["Progression (%)"] = df.apply(compute_progress, axis=1)
