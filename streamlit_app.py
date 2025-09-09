@@ -797,34 +797,32 @@ def page_bons(page_name: str):
         arret = c1.text_input("Arrêt déclaré par", value=st.session_state.get(arret_key, ""), key=arret_key, disabled=("arret_declare_par" not in editable_set))
 
         # Poste de charge
+        # Poste de charge (Production uniquement avec "Autres...")
         poste_key = f"{page_name}_form_poste_de_charge"
         postes = read_options("options_poste_de_charge")
         poste_default = st.session_state.get(poste_key, "")
 
         if "poste_de_charge" in editable_set:
-            # Options + "Autres..."
-            poste_options = [""] + postes + ["Autres..."]
-            index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
-            poste = c2.selectbox("Poste de charge", poste_options, index=index_default, key=poste_key)
+        poste_options = [""] + postes + ["Autres..."]
+        index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
+        poste = c2.selectbox("Poste de charge", poste_options, index=index_default, key=poste_key)
 
-            # Si "Autres..." choisi, afficher champ texte
-            if poste == "Autres...":
-                new_poste_key = f"{page_name}_new_poste"
-                new_poste = c2.text_input("Ajouter nouveau poste", key=new_poste_key)
-                if new_poste:
-                    new_poste_clean = new_poste.strip()
-                    if new_poste_clean and new_poste_clean not in postes:
-                        postes.append(new_poste_clean)
-                        write_options("options_poste_de_charge", postes)
-                        # Mettre à jour le selectbox avec la nouvelle valeur
-                        st.session_state[poste_key] = new_poste_clean
-                        poste = new_poste_clean
+        if poste == "Autres...":
+            new_poste_key = f"{page_name}_new_poste"
+            new_poste = c2.text_input("Ajouter nouveau poste", key=new_poste_key)
+            if new_poste:
+                new_poste_clean = new_poste.strip()
+                if new_poste_clean and new_poste_clean not in postes:
+                    postes.append(new_poste_clean)
+                    write_options("options_poste_de_charge", postes)
+                    st.session_state[poste_key] = new_poste_clean
+                    poste = new_poste_clean
         else:
-            # Lecture seule
-            poste_options = [""] + postes
-            index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
-            c2.selectbox("Poste de charge", poste_options, index=index_default, disabled=True)
-            poste = poste_default
+        # Lecture seule
+        poste_options = [""] + postes
+        index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
+        c2.selectbox("Poste de charge", poste_options, index=index_default, disabled=True)
+        poste = poste_default
 
 
         # Heure déclaration
@@ -846,23 +844,30 @@ def page_bons(page_name: str):
         technicien = c3.text_input("Technicien", value=st.session_state.get(tech_key, ""), key=tech_key, disabled=("technicien" not in editable_set))
 
         # Description problème
+        # Description problème (Production uniquement avec "Autres...")
         desc_key = f"{page_name}_form_description_probleme"
         descs = read_options("options_description_probleme")
         desc_default = st.session_state.get(desc_key, "")
+
         if "description_probleme" in editable_set:
-            description = st.selectbox("Description", [""] + descs + ["Autres..."], index=([""]+descs+["Autres..."]).index(desc_default) if desc_default in ([""]+descs+["Autres..."]) else 0, key=desc_key)
-            if st.session_state.get(desc_key) == "Autres...":
-                new_desc = st.text_input("Ajouter nouvelle description", key=f"{page_name}_new_desc")
-                if new_desc:
-                    optsd = read_options("options_description_probleme")
-                    optsd.append(new_desc.strip())
-                    write_options("options_description_probleme", optsd)
-                    st.session_state[desc_key] = new_desc.strip()
-                    description = new_desc.strip()
+        description = st.selectbox("Description", [""] + descs + ["Autres..."], 
+                                    index=([""]+descs+["Autres..."]).index(desc_default) 
+                                    if desc_default in ([""]+descs+["Autres..."]) else 0, 
+                                    key=desc_key)
+        if st.session_state.get(desc_key) == "Autres...":
+            new_desc = st.text_input("Ajouter nouvelle description", key=f"{page_name}_new_desc")
+            if new_desc:
+                new_desc_clean = new_desc.strip()
+                if new_desc_clean and new_desc_clean not in descs:
+                    descs.append(new_desc_clean)
+                    write_options("options_description_probleme", descs)
+                    st.session_state[desc_key] = new_desc_clean
+                    description = new_desc_clean
         else:
             _idx = ([""]+descs).index(desc_default) if desc_default in ([""]+descs) else 0
             st.selectbox("Description", [""] + descs, index=_idx, disabled=True, key=f"{desc_key}_ro")
             description = desc_default
+
 
         # Action
         action_key = f"{page_name}_form_action"
@@ -894,6 +899,35 @@ def page_bons(page_name: str):
 
         submit_key = f"submit_{page_name}"
         submitted = st.form_submit_button("Ajouter / Mettre à jour", key=f"submit_{page_name}")
+
+        # Gestion des options (supprimer en cas d'erreur)
+        if page_name.lower().startswith("production"):
+        st.markdown("### ⚙️ Gérer les options")
+
+        col_g1, col_g2 = st.columns(2)
+
+        # Supprimer un poste
+        to_del_poste = col_g1.selectbox("Supprimer un poste", [""] + read_options("options_poste_de_charge"))
+        if col_g1.button("Supprimer poste"):
+            if to_del_poste:
+                opts = read_options("options_poste_de_charge")
+                if to_del_poste in opts:
+                    opts.remove(to_del_poste)
+                    write_options("options_poste_de_charge", opts)
+                    st.success(f"Poste '{to_del_poste}' supprimé.")
+                    st.rerun()
+
+        # Supprimer une description
+        to_del_desc = col_g2.selectbox("Supprimer une description", [""] + read_options("options_description_probleme"))
+        if col_g2.button("Supprimer description"):
+            if to_del_desc:
+                opts = read_options("options_description_probleme")
+                if to_del_desc in opts:
+                    opts.remove(to_del_desc)
+                    write_options("options_description_probleme", opts)
+                    st.success(f"Description '{to_del_desc}' supprimée.")
+                    st.rerun()
+
 
         if submitted:
             code_v = st.session_state.get(code_key, "").strip()
