@@ -667,15 +667,15 @@ def page_bons(page_name: str):
             poste = c2.selectbox("Poste de charge", poste_options, index=index_default, key=poste_key)
 
             # Si utilisateur choisit "Autres...", permettre la saisie libre
-                if st.session_state.get(poste_key) == "Autres...":
-                    new_poste = c2.text_input("Ajouter nouveau poste", key=f"{page_name}_new_poste")
-                    if new_poste:
-                        new_poste_clean = new_poste.strip()
-                        if new_poste_clean and new_poste_clean not in postes:
-                            postes.append(new_poste_clean)
-                            write_options("options_poste_de_charge", postes)
-                        st.session_state[poste_key] = new_poste_clean
-                        poste = new_poste_clean
+            if st.session_state.get(poste_key) == "Autres...":
+                new_poste = c2.text_input("Ajouter nouveau poste", key=f"{page_name}_new_poste")
+                if new_poste:
+                    new_poste_clean = new_poste.strip()
+                    if new_poste_clean and new_poste_clean not in postes:
+                        postes.append(new_poste_clean)
+                        write_options("options_poste_de_charge", postes)
+                    st.session_state[poste_key] = new_poste_clean
+                    poste = new_poste_clean
         else:
             # Affichage lecture seule
             poste_options = [""] + postes
