@@ -246,42 +246,38 @@ import pandas as pd
 from typing import Dict, Any
 
 
-def compute_progress(bon: Dict[str, Any]) -> int:
+from typing import Dict, Any, Tuple
+
+BON_COLUMNS = ["dpt_production", "dpt_maintenance", "dpt_qualite", "autres"]
+
+def compute_progress(bon: Dict[str, Any]) -> Tuple[int, str]:
+    """
+    Retourne un tuple (progression, couleur) basé sur les colonnes remplies.
+    - 100% uniquement si dpt_production, dpt_maintenance et dpt_qualite == "Valider"
+    - Sinon, % = (colonnes non vides / total colonnes) * 100
+    - Couleur : vert si 100%, jaune si >=50%, rouge sinon
+    """
+    # Calcul du pourcentage
     if bon.get("dpt_production") == "Valider" and \
        bon.get("dpt_maintenance") == "Valider" and \
        bon.get("dpt_qualite") == "Valider":
-        return 100
-    filled = sum(1 for k, v in bon.items() if v not in ("", None))
-    total_columns = len(BON_COLUMNS) if len(BON_COLUMNS) > 0 else 1
-    progress = int((filled / total_columns) * 100)
-    return max(0, min(100, progress))
-
-# Exemple de DataFrame
-data = [
-    {"dpt_production": "Valider", "dpt_maintenance": "Valider", "dpt_qualite": "Valider", "autres": ""},
-    {"dpt_production": "En cours", "dpt_maintenance": "", "dpt_qualite": "", "autres": ""},
-    {"dpt_production": "Valider", "dpt_maintenance": "En cours", "dpt_qualite": "", "autres": "Oui"},
-]
-df = pd.DataFrame(BON_COLUMNS)
-
-# Calcul de la progression pour chaque ligne
-df["Progression (%)"] = df.apply(lambda row: compute_progress(row.to_dict()), axis=1)
-
-# Fonction pour colorer les lignes selon la progression
-def color_progress(row):
-    progress = row["Progression (%)"]
-    if progress == 100:
-        color = "background-color: lightgreen"
-    elif progress >= 50:
-        color = "background-color: lightyellow"
+        progress = 100
     else:
-        color = "background-color: lightcoral"
-    return [color] * len(row)
+        filled = sum(1 for k in BON_COLUMNS if bon.get(k) not in ("", None))
+        progress = int((filled / len(BON_COLUMNS)) * 100)
 
-# Affichage du dashboard Streamlit
-st.title("Dashboard Bon de Travail")
-st.dataframe(df.style.apply(color_progress, axis=1))
+    # Sécurisation entre 0 et 100
+    progress = max(0, min(100, progress))
 
+    # Détermination de la couleur
+    if progress == 100:
+        color = "lightgreen"
+    elif progress >= 50:
+        color = "lightyellow"
+    else:
+        color = "lightcoral"
+
+    return progress, color
 
 
 
