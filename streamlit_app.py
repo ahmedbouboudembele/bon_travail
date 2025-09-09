@@ -602,7 +602,7 @@ def page_bons(page_name: str):
     form_id = f"form_bon_{page_name}"
     
     with st.form(form_id,):
-        c1, c2 = st.columns([2,1])
+        c1, c2, c3 = st.columns([2,1,1])
 
         # Code
         code_key = f"{page_name}_form_code"
@@ -716,7 +716,12 @@ def page_bons(page_name: str):
 
         if submitted:
             code_v = st.session_state.get(code_key, "").strip()
-            date_v = st.session_state.get(date_key, default_date_obj.strftime("%Y-%m-%d"))
+            date_val = st.session_state.get(date_key)
+            if isinstance(date_val, (datetime, date)):
+                date_v = date_val.strftime("%Y-%m-%d")
+            else:
+                date_v = str(date_val) if date_val else date.today().strftime("%Y-%m-%d")
+
             row = {k: "" for k in BON_COLUMNS}
             row.update({
                 "code": code_v,
