@@ -689,13 +689,13 @@ def page_dashboard():
         except Exception:
             p = 0
         # Palette : rouge -> orange -> jaune -> vert
-        if p <= 25:
+        if p <= 30:
             color = "#FF6B6B"      # rouge
             textcol = "#000000"
-        elif p <= 50:
+        elif p <= 55:
             color = "#FFA500"      # orange
             textcol = "#000000"
-        elif p <= 75:
+        elif p <= 80:
             color = "#FFD93D"      # jaune
             textcol = "#000000"
         else:
