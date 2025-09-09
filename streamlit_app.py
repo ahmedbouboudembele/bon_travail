@@ -241,6 +241,20 @@ def update_bon(code: str, updates: Dict[str, Any]) -> None:
         raise KeyError("Code introuvable")
     write_bons(bons)
 
+def compute_progress(bon: Dict[str, Any]) -> int:
+    """
+    Retourne un pourcentage d'avancement basé sur les colonnes remplies.
+    - 100% uniquement si dpt_production, dpt_maintenance et dpt_qualite == "Valider"
+    - Sinon, % = (colonnes non vides / total colonnes) * 100
+    """
+    if bon.get("dpt_production") == "Valider" and \
+       bon.get("dpt_maintenance") == "Valider" and \
+       bon.get("dpt_qualite") == "Valider":
+        return 100
+
+    filled = sum(1 for k, v in bon.items() if v not in ("", None))
+    return int((filled / len(BON_COLUMNS)) * 100)
+
 
 def delete_bon(code: str) -> None:
     bons = read_bons()
@@ -542,6 +556,14 @@ def page_dashboard():
     st.markdown("---")
     st.subheader("Aperçu (derniers d'abord)")
     st.dataframe(df.sort_values(by="date", ascending=False), height=320)
+
+    # Calculer l'état d'avancement
+    df["Progression (%)"] = df.apply(compute_progress, axis=1)
+
+    st.markdown("### État d'avancement des bons")
+    st.progress(int(df["Progression (%)"].mean()))  # moyenne globale
+    st.dataframe(df[["code", "date", "dpt_production", "dpt_maintenance", "dpt_qualite", "Progression (%)"]].sort_values(by="date", ascending=False), height=300)
+
 
 # ---------------------------
 # Page: Bons (Production / Maintenance / Qualité)
