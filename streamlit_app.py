@@ -547,6 +547,11 @@ def page_dashboard():
 # Page: Bons (Production / Maintenance / Qualité)
 # ---------------------------
 def page_bons(page_name: str):
+    # Si un chargement est en attente (après un submit), l'appliquer maintenant
+    if "pending_load" in st.session_state:
+        row, pg = st.session_state.pop("pending_load")
+        load_bon_into_session(row, pg)
+    
     st.markdown(f'<div class="app-header" style="background: linear-gradient(90deg, #2b6ea3, #6ea0c8);"><h3 style="margin:6px 0">{page_name} — Gestion des bons</h3></div>', unsafe_allow_html=True)
     if not allowed(page_name):
         st.warning("Vous n'avez pas la permission pour cette page.")
@@ -744,20 +749,24 @@ def page_bons(page_name: str):
                 "dpt_qualite": st.session_state.get(dpt_q_key, ""),
                 "dpt_production": st.session_state.get(dpt_p_key, "")
             })
-            try:
-                if code_v == "":
-                    st.error("Le champ Code est requis pour ajouter ou mettre à jour un bon.")
-                else:
-                    if any(c.get("code","") == code_v for c in read_bons()):
-                        update_bon(code_v, row)
-                        st.success("Bon mis à jour.")
+            if submitted:
+                try:
+                    if code_v == "":
+                        st.error("Le champ Code est requis pour ajouter ou mettre à jour un bon.")
                     else:
-                        add_bon(row)
-                        st.success("Bon ajouté.")
-                    load_bon_into_session(row, page_name)
+                        if any(c.get("code","") == code_v for c in read_bons()):
+                            update_bon(code_v, row)
+                            st.success("Bon mis à jour.")
+                        else:
+                            add_bon(row)
+                            st.success("Bon ajouté.")
+
+                    # Décaler le chargement à l’exécution suivante
+                    st.session_state["pending_load"] = (row, page_name)
                     st.rerun()
-            except Exception as e:
-                st.error(str(e))
+                except Exception as e:
+                    st.error(str(e))
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Recherche & Liste (unique)
