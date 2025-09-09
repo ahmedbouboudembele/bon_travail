@@ -659,9 +659,18 @@ def page_bons(page_name: str):
         poste_key = f"{page_name}_form_poste_de_charge"
         postes = read_options("options_poste_de_charge")
         poste_default = st.session_state.get(poste_key, "")
+
         if "poste_de_charge" in editable_set:
-            poste = c2.selectbox("Poste de charge", [""] + postes + ["Autres..."], index=([""] + postes + ["Autres..."]).index(poste_default) if poste_default in ([""]+postes+["Autres..."]) else 0, key=poste_key)
-            if st.session_state.get(poste_key) == "Autres...":
+            poste = c2.selectbox(
+            "Poste de charge",
+            [""] + postes + ["Autres..."],
+            index=([""] + postes + ["Autres..."]).index(poste_default) if poste_default in ([""] + postes + ["Autres..."]) else 0,
+            key=poste_key,
+            on_change=lambda: st.session_state.update({f"{page_name}_show_new_poste": st.session_state[poste_key] == "Autres..."})
+            )
+
+            # Champ texte conditionnel
+            if st.session_state.get(f"{page_name}_show_new_poste", False):
                 new_poste = c2.text_input("Ajouter nouveau poste", key=f"{page_name}_new_poste")
                 if new_poste:
                     opts = read_options("options_poste_de_charge")
@@ -671,6 +680,7 @@ def page_bons(page_name: str):
                     st.session_state[poste_key] = new_poste.strip()
                     poste = new_poste.strip()
                     st.success(f"Nouveau poste '{new_poste.strip()}' ajouté à la liste.")
+
         else:
             _idx = ([""] + postes).index(poste_default) if poste_default in ([""]+postes) else 0
             c2.selectbox("Poste de charge", [""] + postes, index=_idx, disabled=True, key=f"{poste_key}_ro")
