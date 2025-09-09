@@ -14,6 +14,44 @@ import matplotlib.pyplot as plt
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from openpyxl.drawing.image import Image as XLImage
+#================================================================================================
+# ---------- Helpers : normalisation dates & sanitization ----------
+from datetime import datetime, date
+
+def _to_date_obj(val):
+    """
+    Retourne un datetime.date à partir de:
+      - datetime.date (retourné tel quel)
+      - datetime.datetime (on prend .date())
+      - str (formats courants : 'YYYY-MM-DD' ou 'YYYY/MM/DD')
+      - None / autre -> date.today()
+    """
+    if isinstance(val, date) and not isinstance(val, datetime):
+        return val
+    if isinstance(val, datetime):
+        return val.date()
+    if isinstance(val, str):
+        for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y"):
+            try:
+                return datetime.strptime(val, fmt).date()
+            except Exception:
+                pass
+    return date.today()
+
+def _sanitize_row_for_storage(row: dict) -> dict:
+    """
+    Transforme toute valeur date/datetime en string 'YYYY-MM-DD' pour éviter
+    erreurs de sérialisation JSON lors de l'écriture en fichier / base.
+    """
+    sanitized = {}
+    for k, v in row.items():
+        if isinstance(v, (datetime, date)):
+            sanitized[k] = v.strftime("%Y-%m-%d")
+        else:
+            sanitized[k] = v
+    return sanitized
+
+#================================================================================================
 
 # ---------------------------
 # Configuration & thème
