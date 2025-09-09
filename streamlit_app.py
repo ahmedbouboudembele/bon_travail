@@ -326,13 +326,10 @@ def create_user(username: str, password: str, role: str):
     users.append({"id": new_id, "username": username, "password_hash": hash_password(password), "role": role})
     write_users(users)
 
-# ---------------------------
-# plot_pareto_par_probleme
-# ---------------------------
 
 
 # ---------------------------
-# plot_pareto (défini avant usage)
+# plot_pareto (défini avant usage pour les periode)
 # ---------------------------
 def plot_pareto(df: pd.DataFrame, period: str = "day", top_n_labels: int = 3):
     s = pd.to_datetime(df['date'], errors='coerce').dropna()
@@ -394,7 +391,7 @@ def plot_pareto(df: pd.DataFrame, period: str = "day", top_n_labels: int = 3):
 
 
 # ---------------------------
-# plot_pareto (par type de problème avec filtre)
+# plot_paretoo (par type de problème avec filtre)
 # ---------------------------
 def plot_paretoo(df: pd.DataFrame, top_n_labels: int = 5):
     if "description_probleme" not in df.columns:
@@ -641,72 +638,63 @@ def page_dashboard():
     display_cols = ["code", "date", "dpt_production", "dpt_maintenance", "dpt_qualite"]
 
     c1, c2 = st.columns([3, 1])
-    # On conserve Top N pour le Pareto (la fonction plot_pareto doit accepter top_n_labels)
+    # Top N labels pour les deux paretos
     topn = c2.number_input("Top N", min_value=1, max_value=10, value=3, key="dash_topn")
 
-    # Appel au Pareto (adapté à la version par 'description_probleme' si tu as modifié plot_pareto)
-    # Remplace l'appel ci-dessous si ta signature diffère.
-    try:
-        plot_pareto(df, top_n_labels=topn)
-    except TypeError:
-        # fallback si plot_pareto attend un 'period' (ancienne version) — on ignore period
+    # ---------------------------
+    # Affichage côte à côte des 2 Pareto
+    # ---------------------------
+    st.markdown("### Analyse Pareto")
+    col_p1, col_p2 = st.columns(2)
+
+    with col_p1:
+        st.markdown("**Pareto par période (jours/semaines/mois)**")
         try:
-            plot_paretoo(df, None, top_n_labels=topn)
-        except Exception:
-            pass
+            # on fixe la période par défaut à "month" pour plus de lisibilité
+            plot_pareto(df, period="month", top_n_labels=topn)
+        except Exception as e:
+            st.warning(f"Erreur dans plot_pareto : {e}")
 
+    with col_p2:
+        st.markdown("**Pareto par type de problème**")
+        try:
+            plot_paretoo(df, top_n_labels=topn)
+        except Exception as e:
+            st.warning(f"Erreur dans plot_paretoo : {e}")
+
+    # ---------------------------
+    # Aperçu des bons
+    # ---------------------------
     st.markdown("---")
-    st.subheader("Aperçu (derniers d'abord)")
+    st.subheader("Aperçu (derniers bons d’intervention)")
+    st.dataframe(df.sort_values(by="date", ascending=False)[display_cols], height=320)
 
-    # Calculer l'état d'avancement pour chaque bon (colonne 'Progression (%)')
+    # ---------------------------
+    # État d’avancement coloré
+    # ---------------------------
+    # Calcul progression
     df["Progression (%)"] = df.apply(compute_progress, axis=1)
 
-    # Calcul de la moyenne globale sécurisé
-    mean_series = pd.to_numeric(df["Progression (%)"], errors="coerce").dropna()
-    if mean_series.empty:
-        mean_val = 0
-    else:
-        mean_val = int(max(0, min(100, int(mean_series.mean()))))
+    # Fonction de coloration
+    def color_progress(val):
+        if val == 100:
+            color = "#2ecc71"  # vert
+        elif val >= 50:
+            color = "#f1c40f"  # jaune
+        else:
+            color = "#e74c3c"  # rouge
+        return f"background-color: {color}; color: white;"
 
     st.markdown("### État d'avancement des bons")
-    st.progress(mean_val)
+    st.progress(int(df["Progression (%)"].mean()))  # moyenne globale
 
-    # Préparer le DataFrame d'affichage (trié)
-    # Si 'date' existe mais est stockée en string, on laisse le tri tel quel; sinon, convertis si tu préfères.
-    display_df = df.copy()
-    # S'assurer que les colonnes existent dans l'ordre demandé
-    for col in display_cols:
-        if col not in display_df.columns:
-            display_df[col] = ""
+    styled_df = (
+        df[["code", "date", "dpt_production", "dpt_maintenance", "dpt_qualite", "Progression (%)"]]
+        .sort_values(by="date", ascending=False)
+        .style.applymap(color_progress, subset=["Progression (%)"])
+    )
+    st.dataframe(styled_df, height=300)
 
-    display_df = display_df[display_cols + ["Progression (%)"]]
-    display_df = display_df.sort_values(by="date", ascending=False, ignore_index=True)
-
-    # Fonction pour retourner style CSS par ligne selon Progression (%)
-    def style_row(row):
-        try:
-            p = int(row["Progression (%)"])
-        except Exception:
-            p = 0
-        # Palette : rouge -> orange -> jaune -> vert
-        if p <= 30:
-            color = "#FF6B6B"      # rouge
-            textcol = "#000000"
-        elif p <= 55:
-            color = "#FFA500"      # orange
-            textcol = "#000000"
-        elif p <= 80:
-            color = "#FFD93D"      # jaune
-            textcol = "#000000"
-        else:
-            color = "#6BCB77"      # vert
-            textcol = "#000000"
-        # Appliquer la même couleur à toutes les cellules de la ligne
-        return [f"background-color: {color}; color: {textcol}" for _ in range(len(row))]
-
-    # Appliquer le style et afficher
-    styled = display_df.style.apply(style_row, axis=1)
-    st.dataframe(styled, height=300)
 # ---------------------------
 # Page: Bons (Production / Maintenance / Qualité)
 # ---------------------------
