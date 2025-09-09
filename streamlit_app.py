@@ -320,18 +320,28 @@ def create_user(username: str, password: str, role: str):
 # plot_pareto_par_probleme
 # ---------------------------
 # ---------------------------
-# plot_pareto (par type de problème)
+# plot_pareto (par type de problème avec filtre)
 # ---------------------------
-def plot_pareto(df: pd.DataFrame, period: str = None, top_n_labels: int = 5):
+def plot_pareto(df: pd.DataFrame, top_n_labels: int = 5):
     if "description_probleme" not in df.columns:
         st.warning("La colonne 'description_probleme' est absente des données.")
         return
 
+    # --- Sélecteur de type de problème ---
+    types = df["description_probleme"].dropna().unique().tolist()
+    types = sorted([str(t) for t in types])
+    selected_type = st.selectbox("Filtrer par type de problème :", ["Tous"] + types)
+
+    # --- Filtrage ---
+    if selected_type != "Tous":
+        df = df[df["description_probleme"] == selected_type]
+
     counts = df["description_probleme"].value_counts().sort_values(ascending=False)
     total = counts.sum()
     if total == 0:
-        st.info("Pas assez de données.")
+        st.info("Pas assez de données après filtrage.")
         return
+
     cum_pct = 100 * counts.cumsum() / total
 
     fig, ax1 = plt.subplots(figsize=(10,4))
@@ -341,7 +351,7 @@ def plot_pareto(df: pd.DataFrame, period: str = None, top_n_labels: int = 5):
     x = np.arange(len(counts))
     cmap = plt.get_cmap("viridis")
     colors = cmap(np.linspace(0.2, 0.8, len(counts)))
-    bars = ax1.bar(x, counts.values, color=colors, edgecolor="#2b2b2b", linewidth=0.2)
+    ax1.bar(x, counts.values, color=colors, edgecolor="#2b2b2b", linewidth=0.2)
 
     ax1.set_xticks(x)
     ax1.set_xticklabels(counts.index.tolist(), rotation=45, ha='right', fontsize=9)
@@ -357,7 +367,7 @@ def plot_pareto(df: pd.DataFrame, period: str = None, top_n_labels: int = 5):
     ax2.tick_params(axis='y', labelcolor='#ff7f0e')
     ax2.axhline(80, color='grey', linestyle='--', alpha=0.6)
 
-    # annotate top
+    # --- Annoter les top problèmes ---
     top = counts.head(top_n_labels)
     for idx, (label, val) in enumerate(counts.items()):
         if idx < top_n_labels:
@@ -373,7 +383,6 @@ def plot_pareto(df: pd.DataFrame, period: str = None, top_n_labels: int = 5):
     st.markdown("**Problèmes les plus récurrents :**")
     for i, (label, val) in enumerate(top.items(), start=1):
         st.write(f"{i}. **{label}** — {val} fois — {val/total*100:.1f}%")
-
 
 
 
