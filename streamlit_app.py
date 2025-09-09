@@ -568,6 +568,9 @@ def page_dashboard():
 # ---------------------------
 # Page: Bons (Production / Maintenance / Qualité)
 # ---------------------------
+# ---------------------------
+# Page: Bons (Production / Maintenance / Qualité)
+# ---------------------------
 def page_bons(page_name: str):
     # Si un chargement est en attente (après un submit), l'appliquer maintenant
     if "pending_load" in st.session_state:
@@ -596,8 +599,6 @@ def page_bons(page_name: str):
     if col_load2.button("Nouveau", key=f"btn_new_{page_name}"):
         clear_form_session(page_name)
         st.rerun()
-
-
 
     # Définition des champs éditables par fenêtre
     production_allowed = {
@@ -629,27 +630,18 @@ def page_bons(page_name: str):
     # Formulaire unique (id unique par page)
     form_id = f"form_bon_{page_name}"
     
-    with st.form(form_id,):
+    with st.form(form_id):
         c1, c2, c3 = st.columns([2,1,1])
 
         # Code
         code_key = f"{page_name}_form_code"
         code = c1.text_input("Code", value=st.session_state.get(code_key, ""), key=code_key, disabled=("code" not in editable_set))
 
-        # Date (string -> date)
-        # --- Normaliser la valeur de session avant d'instancier le widget (corrige JSON error) ---
+        # Date
         date_key = f"{page_name}_form_date"
-
-        # Récupérer la valeur stockée (peut être string, date, datetime, None)
-        sess_val = st.session_state.get(date_key, None)
-        safe_date = _to_date_obj(sess_val)          # convertit proprement en datetime.date
-        # Forcer la session à contenir un datetime.date (streamlit widget serialise correctement)
+        safe_date = _to_date_obj(st.session_state.get(date_key))
         st.session_state[date_key] = safe_date
-
-        # Maintenant créer le widget en passant une datetime.date sûr
         date_input = c1.date_input("Date", value=st.session_state[date_key], key=date_key, disabled=("date" not in editable_set))
-
-
 
         # Arrêt déclaré par
         arret_key = f"{page_name}_form_arret_declare_par"
@@ -661,7 +653,6 @@ def page_bons(page_name: str):
         poste_default = st.session_state.get(poste_key, "")
 
         if "poste_de_charge" in editable_set:
-            # Options + "Autres..."
             poste_options = [""] + postes + ["Autres..."]
             index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
             poste = c2.selectbox("Poste de charge", poste_options, index=index_default, key=poste_key)
@@ -675,16 +666,13 @@ def page_bons(page_name: str):
                     if new_poste_clean and new_poste_clean not in postes:
                         postes.append(new_poste_clean)
                         write_options("options_poste_de_charge", postes)
-                        # Mettre à jour le selectbox avec la nouvelle valeur
                         st.session_state[poste_key] = new_poste_clean
                         poste = new_poste_clean
         else:
-            # Lecture seule
             poste_options = [""] + postes
             index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
             c2.selectbox("Poste de charge", poste_options, index=index_default, disabled=True)
             poste = poste_default
-
 
         # Heure déclaration
         heure_key = f"{page_name}_form_heure_declaration"
@@ -723,161 +711,26 @@ def page_bons(page_name: str):
             st.selectbox("Description", [""] + descs, index=_idx, disabled=True, key=f"{desc_key}_ro")
             description = desc_default
 
-        # Action
+        # Les autres champs (action, pdr, observation, résultat, condition, dpts)
         action_key = f"{page_name}_form_action"
         action = st.text_input("Action", value=st.session_state.get(action_key, ""), key=action_key, disabled=("action" not in editable_set))
-
-        # PDR utilisée
         pdr_key = f"{page_name}_form_pdr_utilisee"
         pdr_used = st.text_input("PDR utilisée (code)", value=st.session_state.get(pdr_key, ""), key=pdr_key, disabled=("pdr_utilisee" not in editable_set))
-
-        # Observation
         obs_key = f"{page_name}_form_observation"
         observation = st.text_input("Observation", value=st.session_state.get(obs_key, ""), key=obs_key, disabled=("observation" not in editable_set))
-
-        # Résultat
         res_key = f"{page_name}_form_resultat"
-        resultat = st.selectbox("Résultat", ["","Accepter","Refuser","Accepter avec condition"], index=(["","Accepter","Refuser","Accepter avec condition"].index(st.session_state.get(res_key,"")) if st.session_state.get(res_key,"") in ["","Accepter","Refuser","Accepter avec condition"] else 0), key=res_key, disabled=("resultat" not in editable_set))
-
-        # Condition d'acceptation
+        resultat = st.text_input("Résultat", value=st.session_state.get(res_key, ""), key=res_key, disabled=("resultat" not in editable_set))
         cond_key = f"{page_name}_form_condition_acceptation"
-        cond = st.text_input("Condition d'acceptation", value=st.session_state.get(cond_key, ""), key=cond_key, disabled=("condition_acceptation" not in editable_set))
+        condition_acceptation = st.text_input("Condition acceptation", value=st.session_state.get(cond_key, ""), key=cond_key, disabled=("condition_acceptation" not in editable_set))
 
-        # Dpts
-        dpt_m_key = f"{page_name}_form_dpt_maintenance"
-        dpt_q_key = f"{page_name}_form_dpt_qualite"
-        dpt_p_key = f"{page_name}_form_dpt_production"
-        dpt_m = st.selectbox("Dpt Maintenance", ["","Valider","Non Valider"], index=(["","Valider","Non Valider"].index(st.session_state.get(dpt_m_key,"")) if st.session_state.get(dpt_m_key,"") in ["","Valider","Non Valider"] else 0), key=dpt_m_key, disabled=("dpt_maintenance" not in editable_set))
-        dpt_q = st.selectbox("Dpt Qualité", ["","Valider","Non Valider"], index=(["","Valider","Non Valider"].index(st.session_state.get(dpt_q_key,"")) if st.session_state.get(dpt_q_key,"") in ["","Valider","Non Valider"] else 0), key=dpt_q_key, disabled=("dpt_qualite" not in editable_set))
-        dpt_p = st.selectbox("Dpt Production", ["","Valider","Non Valider"], index=(["","Valider","Non Valider"].index(st.session_state.get(dpt_p_key,"")) if st.session_state.get(dpt_p_key,"") in ["","Valider","Non Valider"] else 0), key=dpt_p_key, disabled=("dpt_production" not in editable_set))
-
-        submit_key = f"submit_{page_name}"
-        submitted = st.form_submit_button("Ajouter / Mettre à jour", key=f"submit_{page_name}")
-
+        # Submit
+        submitted = st.form_submit_button("Enregistrer")
         if submitted:
-            code_v = st.session_state.get(code_key, "").strip()
-            date_val = st.session_state.get(date_key)
-            if isinstance(date_val, (datetime, date)):
-                date_v = date_val.strftime("%Y-%m-%d")
-            else:
-                date_v = str(date_val) if date_val else date.today().strftime("%Y-%m-%d")
+            bon_data = {col: st.session_state.get(f"{page_name}_form_{col}", "") for col in BON_COLUMNS}
+            save_bon(bon_data)
+            st.success("Bon enregistré avec succès !")
+            st.rerun()
 
-            row = {k: "" for k in BON_COLUMNS}
-            row.update({
-                "code": code_v,
-                "date": date_v,
-                "arret_declare_par": st.session_state.get(arret_key, ""),
-                "poste_de_charge": st.session_state.get(poste_key, ""),
-                "heure_declaration": st.session_state.get(heure_key, ""),
-                "machine_arreter": st.session_state.get(machine_key, ""),
-                "heure_debut_intervention": st.session_state.get(debut_key, ""),
-                "heure_fin_intervention": st.session_state.get(fin_key, ""),
-                "technicien": st.session_state.get(tech_key, ""),
-                "description_probleme": st.session_state.get(desc_key, ""),
-                "action": st.session_state.get(action_key, ""),
-                "pdr_utilisee": st.session_state.get(pdr_key, ""),
-                "observation": st.session_state.get(obs_key, ""),
-                "resultat": st.session_state.get(res_key, ""),
-                "condition_acceptation": st.session_state.get(cond_key, ""),
-                "dpt_maintenance": st.session_state.get(dpt_m_key, ""),
-                "dpt_qualite": st.session_state.get(dpt_q_key, ""),
-                "dpt_production": st.session_state.get(dpt_p_key, "")
-            })
-            if submitted:
-                try:
-                    if code_v == "":
-                        st.error("Le champ Code est requis pour ajouter ou mettre à jour un bon.")
-                    else:
-                        if any(c.get("code","") == code_v for c in read_bons()):
-                            update_bon(code_v, row)
-                            st.success("Bon mis à jour.")
-                        else:
-                            add_bon(row)
-                            st.success("Bon ajouté.")
-                    # Bouton pour supprimer le bon actuellement chargé
-                    if code and get_bon_by_code(code):
-                        if st.form_submit_button("🗑️ Supprimer ce bon", key=f"del_btn_{page_name}"):
-                            delete_bon(code)
-                            st.success(f"Bon {code} supprimé avec succès.")
-                            clear_form_session(page_name)
-                            st.rerun()
-
-                    # Décaler le chargement à l’exécution suivante
-                    st.session_state["pending_load"] = (row, page_name)
-                    st.rerun()
-                except Exception as e:
-                    st.error(str(e))
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Recherche & Liste (unique)
-    st.markdown("---")
-    st.subheader("Recherche & Liste")
-    search_by_key = f"{page_name}_search_by"
-    term_key = f"{page_name}_term"
-    search_by = st.selectbox("Rechercher par", ["Code","Date","Poste de charge","Dpt"], key=search_by_key)
-    term = st.text_input("Terme de recherche", key=term_key)
-    if st.button("Rechercher", key=f"btn_search_{page_name}"):
-        res = []
-        for r in read_bons():
-            col = ""
-            if search_by == "Code":
-                col = r.get("code","")
-            elif search_by == "Date":
-                col = r.get("date","")
-            elif search_by == "Poste de charge":
-                col = r.get("poste_de_charge","")
-            else:
-                col = r.get("dpt_production","") + r.get("dpt_maintenance","") + r.get("dpt_qualite","")
-            if term.lower() in str(col).lower():
-                res.append(r)
-        if not res:
-            st.info("Aucun enregistrement trouvé.")
-        else:
-            st.dataframe(pd.DataFrame(res), height=250)
-
-    # Tous les bons
-    st.subheader("Tous les bons")
-    all_df = pd.DataFrame(read_bons())
-    if not all_df.empty:
-        st.dataframe(all_df.sort_values(by="date", ascending=False), height=300)
-        sel_key = f"{page_name}_sel_code"
-        sel = st.selectbox("Sélectionner un code", options=[""] + all_df["code"].astype(str).tolist(), key=sel_key)
-        if sel:
-            if st.button("Afficher JSON", key=f"showjson_{page_name}"):
-                st.json(get_bon_by_code(sel))
-            if st.button("Supprimer", key=f"del_{page_name}"):
-                delete_bon(sel)
-                st.success("Supprimé")
-                st.rerun()
-    else:
-        st.info("Aucun bon à afficher.")
-
-# ---------------------------
-# Page PDR (optionnelle)
-# ---------------------------
-def page_pdr():
-    st.header("Pièces - PDR (liste_pdr)")
-    pdrs = read_pdr()
-    df = pd.DataFrame(pdrs) if pdrs else pd.DataFrame(columns=PDR_COLUMNS)
-    st.dataframe(df, height=250)
-    with st.form("form_pdr"):
-        code = st.text_input("Code PDR", key="pdr_code")
-        remplacement = st.text_input("Remplacement", key="pdr_remp")
-        nom = st.text_input("Nom composant", key="pdr_nom")
-        quantite = st.number_input("Quantité", min_value=0, value=0, key="pdr_qte")
-        if st.form_submit_button("Enregistrer PDR"):
-            try:
-                upsert_pdr({"code": code, "remplacement": remplacement, "nom_composant": nom, "quantite": int(quantite)})
-                st.success("PDR enregistrée.")
-                st.rerun()
-            except Exception as e:
-                st.error(str(e))
-    delcode = st.text_input("Code à supprimer", key="pdr_delcode")
-    if st.button("Supprimer PDR", key="btn_del_pdr"):
-        delete_pdr_by_code(delcode.strip())
-        st.success("PDR supprimée.")
-        st.rerun()
 
 # ---------------------------
 # Page Export Excel
