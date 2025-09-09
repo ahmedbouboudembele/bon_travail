@@ -661,31 +661,26 @@ def page_bons(page_name: str):
         poste_default = st.session_state.get(poste_key, "")
 
         if "poste_de_charge" in editable_set:
-            # Selectbox sans callback
+            # Crée la liste des options avec "Autres..." à la fin
             poste_options = [""] + postes + ["Autres..."]
             index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
             poste = c2.selectbox("Poste de charge", poste_options, index=index_default, key=poste_key)
 
-            # Champ texte conditionnel (à l'intérieur du formulaire, sans callback)
-            show_new_poste = st.session_state.get(f"{page_name}_show_new_poste", False)
-            if poste == "Autres...":
-                st.session_state[f"{page_name}_show_new_poste"] = True
-                new_poste = c2.text_input("Ajouter nouveau poste", key=f"{page_name}_new_poste")
-                if new_poste:
-                    opts = read_options("options_poste_de_charge")
-                    if new_poste.strip() not in opts:
-                        opts.append(new_poste.strip())
-                        write_options("options_poste_de_charge", opts)
-                    st.session_state[poste_key] = new_poste.strip()
-                    poste = new_poste.strip()
-                    st.success(f"Nouveau poste '{new_poste.strip()}' ajouté à la liste.")
-                else:
-                    st.session_state[f"{page_name}_show_new_poste"] = False
-
+            # Si utilisateur choisit "Autres...", permettre la saisie libre
+                if st.session_state.get(poste_key) == "Autres...":
+                    new_poste = c2.text_input("Ajouter nouveau poste", key=f"{page_name}_new_poste")
+                    if new_poste:
+                        new_poste_clean = new_poste.strip()
+                        if new_poste_clean and new_poste_clean not in postes:
+                            postes.append(new_poste_clean)
+                            write_options("options_poste_de_charge", postes)
+                        st.session_state[poste_key] = new_poste_clean
+                        poste = new_poste_clean
         else:
-        # Si lecture seule
-            _idx = ([""] + postes).index(poste_default) if poste_default in ([""]+postes) else 0
-            c2.selectbox("Poste de charge", [""] + postes, index=_idx, disabled=True, key=f"{poste_key}_ro")
+            # Affichage lecture seule
+            poste_options = [""] + postes
+            index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
+            c2.selectbox("Poste de charge", poste_options, index=index_default, disabled=True, key=f"{poste_key}_ro")
             poste = poste_default
 
         # Heure déclaration
