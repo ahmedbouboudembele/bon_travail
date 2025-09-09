@@ -565,7 +565,6 @@ def page_dashboard():
     st.dataframe(df[["code", "date", "dpt_production", "dpt_maintenance", "dpt_qualite", "Progression (%)"]].sort_values(by="date", ascending=False), height=300)
 
 def write_options():
-        """Fonction pour mettre à jour la liste des postes"""
     st.session_state.postes = st.session_state.postes
 
 # Sélection du poste
