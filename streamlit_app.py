@@ -322,7 +322,7 @@ def create_user(username: str, password: str, role: str):
 # ---------------------------
 # plot_pareto (par problème récurrent)
 # ---------------------------
-def plot_pareto(df: pd.DataFrame, top_n_labels: int = 5):
+def plot_pareto(df: pd.DataFrame, period: str = None, top_n_labels: int = 5):
     if "description" not in df.columns:
         st.warning("La colonne 'description' est absente des données.")
         return
