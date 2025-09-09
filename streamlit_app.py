@@ -872,4 +872,4 @@ elif menu == "Export Excel":
 
 # Footer
 st.sidebar.markdown("---")
-st.sidebar.caption("⚠️ Données stockées localement sur l'instance Streamlit. Elles peuvent disparaître après redémarrage / redeploy.")
+st.sidebar.caption("⚠️ Données stockées localement sur l'instance Streamlit et sur le disque du PC poste (Othman)")
