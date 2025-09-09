@@ -319,7 +319,7 @@ def create_user(username: str, password: str, role: str):
 # ---------------------------
 # plot_pareto_par_probleme
 # ---------------------------
-def plot_pareto_par_probleme(df: pd.DataFrame, top_n_labels: int = 5):
+def plot_pareto(df: pd.DataFrame, top_n_labels: int = 5):
     if "description" not in df.columns:
         st.warning("La colonne 'description' est absente des données.")
         return
@@ -339,7 +339,7 @@ def plot_pareto_par_probleme(df: pd.DataFrame, top_n_labels: int = 5):
     x = np.arange(len(counts))
     cmap = plt.get_cmap("viridis")
     colors = cmap(np.linspace(0.2, 0.8, len(counts)))
-    bars = ax1.bar(x, counts.values, color=colors, edgecolor="#2b2b2b", linewidth=0.2)
+    ax1.bar(x, counts.values, color=colors, edgecolor="#2b2b2b", linewidth=0.2)
     ax1.set_xticks(x)
     ax1.set_xticklabels(counts.index.tolist(), rotation=45, ha='right', fontsize=9)
     ax1.set_ylabel("Nombre de cas")
@@ -370,6 +370,7 @@ def plot_pareto_par_probleme(df: pd.DataFrame, top_n_labels: int = 5):
     st.markdown("**Problèmes les plus fréquents :**")
     for i, (label, val) in enumerate(top.items(), start=1):
         st.write(f"{i}. **{label}** — {val} cas — {val/total*100:.1f}%")
+
 
 
 # ---------------------------
