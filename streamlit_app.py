@@ -563,6 +563,7 @@ def page_dashboard():
     topn = c2.number_input("Top N", min_value=1, max_value=10, value=3, key="dash_topn")
     plot_pareto(df, top_n_labels=topn)
     st.markdown("---")
+    st.dataframe(df.sort_values(by="date", ascending=False), height=320)
     st.subheader("Aperçu (derniers d'abord)")
     
 
