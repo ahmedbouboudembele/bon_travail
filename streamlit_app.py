@@ -902,31 +902,31 @@ def page_bons(page_name: str):
 
         # Gestion des options (supprimer en cas d'erreur)
         if page_name.lower().startswith("production"):
-        st.markdown("### ⚙️ Gérer les options")
+            st.markdown("### ⚙️ Gérer les options")
 
-        col_g1, col_g2 = st.columns(2)
+            col_g1, col_g2 = st.columns(2)
 
-        # Supprimer un poste
-        to_del_poste = col_g1.selectbox("Supprimer un poste", [""] + read_options("options_poste_de_charge"))
-        if col_g1.button("Supprimer poste"):
-            if to_del_poste:
-                opts = read_options("options_poste_de_charge")
-                if to_del_poste in opts:
-                    opts.remove(to_del_poste)
-                    write_options("options_poste_de_charge", opts)
-                    st.success(f"Poste '{to_del_poste}' supprimé.")
-                    st.rerun()
+            # Supprimer un poste
+            to_del_poste = col_g1.selectbox("Supprimer un poste", [""] + read_options("options_poste_de_charge"))
+            if col_g1.button("Supprimer poste"):
+                if to_del_poste:
+                    opts = read_options("options_poste_de_charge")
+                    if to_del_poste in opts:
+                        opts.remove(to_del_poste)
+                        write_options("options_poste_de_charge", opts)
+                        st.success(f"Poste '{to_del_poste}' supprimé.")
+                        st.rerun()
 
-        # Supprimer une description
-        to_del_desc = col_g2.selectbox("Supprimer une description", [""] + read_options("options_description_probleme"))
-        if col_g2.button("Supprimer description"):
-            if to_del_desc:
-                opts = read_options("options_description_probleme")
-                if to_del_desc in opts:
-                    opts.remove(to_del_desc)
-                    write_options("options_description_probleme", opts)
-                    st.success(f"Description '{to_del_desc}' supprimée.")
-                    st.rerun()
+            # Supprimer une description
+            to_del_desc = col_g2.selectbox("Supprimer une description", [""] + read_options("options_description_probleme"))
+            if col_g2.button("Supprimer description"):
+                if to_del_desc:
+                    opts = read_options("options_description_probleme")
+                    if to_del_desc in opts:
+                        opts.remove(to_del_desc)
+                        write_options("options_description_probleme", opts)
+                        st.success(f"Description '{to_del_desc}' supprimée.")
+                        st.rerun()
 
 
         if submitted:
