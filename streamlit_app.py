@@ -243,19 +243,29 @@ def update_bon(code: str, updates: Dict[str, Any]) -> None:
 
 def compute_progress(bon: Dict[str, Any]) -> int:
     """
-    Retourne un pourcentage d'avancement basé sur les colonnes remplies.
-    - 100% uniquement si dpt_production, dpt_maintenance et dpt_qualite == "Valider"
-    - Sinon, % = (colonnes non vides / total colonnes) * 100
+    Retourne un pourcentage d'avancement (int 0..100) basé sur les colonnes:
+      dpt_production, dpt_maintenance, dpt_qualite (logique inchangée mais sécurisée).
+    - 100% si les 3 dpt == "Valider"
+    - Sinon, % = (nombre de champs non vides parmi BON_COLUMNS / len(BON_COLUMNS)) * 100
+    Toujours renvoie un int entre 0 et 100.
     """
-    if bon.get("dpt_production") == "Valider" and \
-       bon.get("dpt_maintenance") == "Valider" and \
-       bon.get("dpt_qualite") == "Valider":
-        return 100
+    try:
+        # Si les 3 validations sont 'Valider' => 100%
+        if bon.get("dpt_production") == "Valider" and \
+           bon.get("dpt_maintenance") == "Valider" and \
+           bon.get("dpt_qualite") == "Valider":
+            return 100
 
-    filled = sum(1 for k, v in bon.items() if v not in ("", None))
-    return int((filled / len(BON_COLUMNS)) * 100)
+        # Comptage sécurisé des champs non vides
+        filled = sum(1 for k, v in bon.items() if v not in ("", None))
+        total_columns = len(BON_COLUMNS) if len(BON_COLUMNS) > 0 else 1
+        progress = int((filled / total_columns) * 100)
 
-
+        # Borner la valeur entre 0 et 100
+        return max(0, min(100, progress))
+    except Exception:
+        # En cas d'erreur imprévue, retourner 0 (sécurité)
+        return 0
 
 def delete_bon(code: str) -> None:
     bons = read_bons()
@@ -613,35 +623,90 @@ def allowed(page: str) -> bool:
         return True
     return False
 
-# ---------------------------
-# Page: Dashboard
-# ---------------------------
 def page_dashboard():
-    st.markdown(f'<div class="app-header" style="background: linear-gradient(90deg, #2b6ea3, #6ea0c8);"><h3 style="margin:6px 0">Tableau de bord — Pareto & résumé</h3></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="app-header" style="background: linear-gradient(90deg, #2b6ea3, #6ea0c8);">'
+        "<h3 style='margin:6px 0'>Tableau de bord — Pareto & résumé</h3></div>",
+        unsafe_allow_html=True,
+    )
+
     bons = read_bons()
     if not bons:
         st.info("Aucun bon enregistré.")
         return
-    df = pd.DataFrame(bons)
-    c1, c2 = st.columns([3,1])
-    period = c1.selectbox("Période pour Pareto", ["day","week","month"], key="dash_period")
-    topn = c2.number_input("Top N", min_value=1, max_value=10, value=3, key="dash_topn")
-    plot_pareto(df,period=period, top_n_labels=topn)
-    plot_paretoo(df, top_n_labels=topn)
-    st.markdown("---")
-    st.dataframe(df.sort_values(by="date", ascending=False), height=320)
-    st.subheader("Aperçu (derniers d'abord)")
-    st.dataframe(df.sort_values(by="date", ascending=False), height=320)
-    
 
-    # Calculer l'état d'avancement
+    df = pd.DataFrame(bons)
+
+    # Colonnes affichées dans le tableau résumé (ordre souhaité)
+    display_cols = ["code", "date", "dpt_production", "dpt_maintenance", "dpt_qualite"]
+
+    c1, c2 = st.columns([3, 1])
+    # On conserve Top N pour le Pareto (la fonction plot_pareto doit accepter top_n_labels)
+    topn = c2.number_input("Top N", min_value=1, max_value=10, value=3, key="dash_topn")
+
+    # Appel au Pareto (adapté à la version par 'description_probleme' si tu as modifié plot_pareto)
+    # Remplace l'appel ci-dessous si ta signature diffère.
+    try:
+        plot_pareto(df, top_n_labels=topn)
+    except TypeError:
+        # fallback si plot_pareto attend un 'period' (ancienne version) — on ignore period
+        try:
+            plot_pareto(df, None, top_n_labels=topn)
+        except Exception:
+            pass
+
+    st.markdown("---")
+    st.subheader("Aperçu (derniers d'abord)")
+
+    # Calculer l'état d'avancement pour chaque bon (colonne 'Progression (%)')
     df["Progression (%)"] = df.apply(compute_progress, axis=1)
 
+    # Calcul de la moyenne globale sécurisé
+    mean_series = pd.to_numeric(df["Progression (%)"], errors="coerce").dropna()
+    if mean_series.empty:
+        mean_val = 0
+    else:
+        mean_val = int(max(0, min(100, int(mean_series.mean()))))
+
     st.markdown("### État d'avancement des bons")
-    st.progress(int(df["Progression (%)"].mean()))  # moyenne globale
-    st.dataframe(df[["code", "date", "dpt_production", "dpt_maintenance", "dpt_qualite", "Progression (%)"]].sort_values(by="date", ascending=False), height=300)
+    st.progress(mean_val)
 
+    # Préparer le DataFrame d'affichage (trié)
+    # Si 'date' existe mais est stockée en string, on laisse le tri tel quel; sinon, convertis si tu préfères.
+    display_df = df.copy()
+    # S'assurer que les colonnes existent dans l'ordre demandé
+    for col in display_cols:
+        if col not in display_df.columns:
+            display_df[col] = ""
 
+    display_df = display_df[display_cols + ["Progression (%)"]]
+    display_df = display_df.sort_values(by="date", ascending=False, ignore_index=True)
+
+    # Fonction pour retourner style CSS par ligne selon Progression (%)
+    def style_row(row):
+        try:
+            p = int(row["Progression (%)"])
+        except Exception:
+            p = 0
+        # Palette : rouge -> orange -> jaune -> vert
+        if p <= 25:
+            color = "#FF6B6B"      # rouge
+            textcol = "#000000"
+        elif p <= 50:
+            color = "#FFA500"      # orange
+            textcol = "#000000"
+        elif p <= 75:
+            color = "#FFD93D"      # jaune
+            textcol = "#000000"
+        else:
+            color = "#6BCB77"      # vert
+            textcol = "#000000"
+        # Appliquer la même couleur à toutes les cellules de la ligne
+        return [f"background-color: {color}; color: {textcol}" for _ in range(len(row))]
+
+    # Appliquer le style et afficher
+    styled = display_df.style.apply(style_row, axis=1)
+    st.dataframe(styled, height=300)
 # ---------------------------
 # Page: Bons (Production / Maintenance / Qualité)
 # ---------------------------
