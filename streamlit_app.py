@@ -248,35 +248,35 @@ from typing import Dict, Any
 
 from typing import Dict, Any, Tuple
 
+def compute_progress(bon: dict) -> tuple[int, str]:
+    """
+    Retourne un tuple (progression, couleur) basé sur les colonnes dpt_production, dpt_maintenance, dpt_qualite.
 
-def compute_progress(bon: Dict[str, Any]) -> Tuple[int, str]:
+    - 100% si tous les départements sont "Valider"
+    - Sinon % = (colonnes non vides / total colonnes) * 100
+    - Couleur selon l'avancement :
+        - Rouge : < 50%
+        - Orange : 50% <= progress < 80%
+        - Vert : >= 80%
     """
-    Retourne un tuple (progression, couleur) basé sur les colonnes remplies.
-    - 100% uniquement si dpt_production, dpt_maintenance et dpt_qualite == "Valider"
-    - Sinon, % = (colonnes non vides / total colonnes) * 100
-    - Couleur : vert si 100%, jaune si >=50%, rouge sinon
-    """
-    # Calcul du pourcentage
-    if bon.get("dpt_production") == "Valider" and \
-       bon.get("dpt_maintenance") == "Valider" and \
-       bon.get("dpt_qualite") == "Valider":
+
+    # Si tous valident, 100%
+    if all(bon.get(c) == "Valider" for c in BON_COLUMNS):
         progress = 100
     else:
-        filled = sum(1 for k in BON_COLUMNS if bon.get(k) not in ("", None))
+        filled = sum(1 for c in BON_COLUMNS if bon.get(c) not in ("", None))
         progress = int((filled / len(BON_COLUMNS)) * 100)
 
-    # Sécurisation entre 0 et 100
-    progress = max(0, min(100, progress))
-
-    # Détermination de la couleur
-    if progress == 100:
-        color = "lightgreen"
-    elif progress >= 50:
-        color = "lightyellow"
+    # Définir la couleur
+    if progress < 50:
+        color = "red"
+    elif progress < 80:
+        color = "orange"
     else:
-        color = "lightcoral"
+        color = "green"
 
     return progress, color
+
 
 
 
