@@ -564,6 +564,12 @@ def page_dashboard():
     st.progress(int(df["Progression (%)"].mean()))  # moyenne globale
     st.dataframe(df[["code", "date", "dpt_production", "dpt_maintenance", "dpt_qualite", "Progression (%)"]].sort_values(by="date", ascending=False), height=300)
 
+def write_options():
+        """Fonction pour mettre à jour la liste des postes"""
+    st.session_state.postes = st.session_state.postes
+
+# Sélection du poste
+poste_selection = st.selectbox("Choisir un poste :", st.session_state.postes)
 
 # ---------------------------
 # Page: Bons (Production / Maintenance / Qualité)
@@ -660,12 +666,6 @@ def page_bons(page_name: str):
         postes = read_options("options_poste_de_charge")
         poste_default = st.session_state.get(poste_key, "")
 
-        def write_options():
-        """Fonction pour mettre à jour la liste des postes"""
-            st.session_state.postes = st.session_state.postes
-
-        # Sélection du poste
-        poste_selection = st.selectbox("Choisir un poste :", st.session_state.postes)
 
         # Si l'utilisateur choisit "Autres...", afficher un champ texte
         if poste_selection == "Autres...":
