@@ -850,19 +850,19 @@ def page_bons(page_name: str):
         desc_default = st.session_state.get(desc_key, "")
 
         if "description_probleme" in editable_set:
-        description = st.selectbox("Description", [""] + descs + ["Autres..."], 
+            description = st.selectbox("Description", [""] + descs + ["Autres..."], 
                                     index=([""]+descs+["Autres..."]).index(desc_default) 
                                     if desc_default in ([""]+descs+["Autres..."]) else 0, 
                                     key=desc_key)
-        if st.session_state.get(desc_key) == "Autres...":
-            new_desc = st.text_input("Ajouter nouvelle description", key=f"{page_name}_new_desc")
-            if new_desc:
-                new_desc_clean = new_desc.strip()
-                if new_desc_clean and new_desc_clean not in descs:
-                    descs.append(new_desc_clean)
-                    write_options("options_description_probleme", descs)
-                    st.session_state[desc_key] = new_desc_clean
-                    description = new_desc_clean
+            if st.session_state.get(desc_key) == "Autres...":
+                new_desc = st.text_input("Ajouter nouvelle description", key=f"{page_name}_new_desc")
+                if new_desc:
+                    new_desc_clean = new_desc.strip()
+                    if new_desc_clean and new_desc_clean not in descs:
+                        descs.append(new_desc_clean)
+                        write_options("options_description_probleme", descs)
+                        st.session_state[desc_key] = new_desc_clean
+                        description = new_desc_clean
         else:
             _idx = ([""]+descs).index(desc_default) if desc_default in ([""]+descs) else 0
             st.selectbox("Description", [""] + descs, index=_idx, disabled=True, key=f"{desc_key}_ro")
