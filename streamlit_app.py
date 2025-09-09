@@ -564,11 +564,6 @@ def page_dashboard():
     st.progress(int(df["Progression (%)"].mean()))  # moyenne globale
     st.dataframe(df[["code", "date", "dpt_production", "dpt_maintenance", "dpt_qualite", "Progression (%)"]].sort_values(by="date", ascending=False), height=300)
 
-def write_options():
-    st.session_state.postes = st.session_state.postes
-
-# Sélection du poste
-poste_selection = st.selectbox("Choisir un poste :", st.session_state.postes)
 
 # ---------------------------
 # Page: Bons (Production / Maintenance / Qualité)
@@ -665,18 +660,29 @@ def page_bons(page_name: str):
         postes = read_options("options_poste_de_charge")
         poste_default = st.session_state.get(poste_key, "")
 
+        if "poste_de_charge" in editable_set:
+            # Crée la liste des options avec "Autres..." à la fin
+            poste_options = [""] + postes + ["Autres..."]
+            index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
+            poste = c2.selectbox("Poste de charge", poste_options, index=index_default, key=poste_key)
 
-        # Si l'utilisateur choisit "Autres...", afficher un champ texte
-        if poste_selection == "Autres...":
-            nouveau_poste = st.text_input("Entrez le nouveau poste :")
-            if st.button("Ajouter le poste"):
-                if nouveau_poste and nouveau_poste not in st.session_state.postes:
-                # Ajouter le nouveau poste dans la liste et mettre à jour session_state
-                    st.session_state.postes.insert(-1, nouveau_poste)  # avant "Autres..."
-                    write_options()
-                    st.success(f"Poste '{nouveau_poste}' ajouté !")
-                    # Pour re-sélectionner automatiquement le nouveau poste
-                    st.experimental_rerun()
+            # Si utilisateur choisit "Autres...", permettre la saisie libre
+            if st.session_state.get(poste_key) == "Autres...":
+                new_poste = c2.text_input("Ajouter nouveau poste", key=f"{page_name}_new_poste")
+                if new_poste:
+                    new_poste_clean = new_poste.strip()
+                    if new_poste_clean and new_poste_clean not in postes:
+                        postes.append(new_poste_clean)
+                        write_options("options_poste_de_charge", postes)
+                    st.session_state[poste_key] = new_poste_clean
+                    poste = new_poste_clean
+        else:
+            # Affichage lecture seule
+            poste_options = [""] + postes
+            index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
+            c2.selectbox("Poste de charge", poste_options, index=index_default, disabled=True, key=f"{poste_key}_ro")
+            poste = poste_default
+
 
         # Heure déclaration
         heure_key = f"{page_name}_form_heure_declaration"
