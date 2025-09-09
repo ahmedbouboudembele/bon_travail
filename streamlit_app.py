@@ -760,6 +760,13 @@ def page_bons(page_name: str):
                         else:
                             add_bon(row)
                             st.success("Bon ajouté.")
+                    # Bouton pour supprimer le bon actuellement chargé
+                    if code and get_bon_by_code(code):
+                        if st.form_submit_button("🗑️ Supprimer ce bon", key=f"del_btn_{page_name}"):
+                            delete_bon(code)
+                            st.success(f"Bon {code} supprimé avec succès.")
+                            clear_form_session(page_name)
+                            st.rerun()
 
                     # Décaler le chargement à l’exécution suivante
                     st.session_state["pending_load"] = (row, page_name)
