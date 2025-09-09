@@ -262,7 +262,7 @@ data = [
     {"dpt_production": "En cours", "dpt_maintenance": "", "dpt_qualite": "", "autres": ""},
     {"dpt_production": "Valider", "dpt_maintenance": "En cours", "dpt_qualite": "", "autres": "Oui"},
 ]
-df = pd.DataFrame(data)
+df = pd.DataFrame(BON_COLUMNS)
 
 # Calcul de la progression pour chaque ligne
 df["Progression (%)"] = df.apply(lambda row: compute_progress(row.to_dict()), axis=1)
