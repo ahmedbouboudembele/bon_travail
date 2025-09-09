@@ -20,10 +20,10 @@ st.title("Gestion des Bons de Travail - MySQL")
 # ---------------------------
 def get_connection():
     return mysql.connector.connect(
-        host="localhost",
+        host="127.0.0.1",
         user="root",
-        password="your_password",
-        database="work_orders"
+        password="",
+        database="bon_travail_db"
     )
 
 # ---------------------------
@@ -66,7 +66,7 @@ BON_COLUMNS = [
 
 def read_bons(filters=None):
     conn = get_connection()
-    df = pd.read_sql("SELECT * FROM bons_travail", conn)
+    df = pd.read_sql("SELECT * FROM bon_travail_db", conn)
     conn.close()
     if filters:
         for k,v in filters.items():
@@ -80,7 +80,7 @@ def add_bon(row):
     cols = ",".join(row.keys())
     vals = tuple(row.values())
     placeholders = ",".join(["%s"]*len(row))
-    cursor.execute(f"INSERT INTO bons_travail ({cols}) VALUES ({placeholders})", vals)
+    cursor.execute(f"INSERT INTO bon_travail_db ({cols}) VALUES ({placeholders})", vals)
     conn.commit()
     cursor.close()
     conn.close()
@@ -90,7 +90,7 @@ def update_bon(code, row):
     cursor = conn.cursor()
     set_str = ", ".join([f"{k}=%s" for k in row.keys()])
     vals = tuple(row.values()) + (code,)
-    cursor.execute(f"UPDATE bons_travail SET {set_str} WHERE code=%s", vals)
+    cursor.execute(f"UPDATE bon_travail_db SET {set_str} WHERE code=%s", vals)
     conn.commit()
     cursor.close()
     conn.close()
@@ -98,7 +98,7 @@ def update_bon(code, row):
 def delete_bon(code):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM bons_travail WHERE code=%s", (code,))
+    cursor.execute("DELETE FROM bon_travail_db WHERE code=%s", (code,))
     conn.commit()
     cursor.close()
     conn.close()
