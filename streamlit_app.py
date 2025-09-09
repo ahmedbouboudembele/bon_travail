@@ -319,6 +319,9 @@ def create_user(username: str, password: str, role: str):
 # ---------------------------
 # plot_pareto_par_probleme
 # ---------------------------
+# ---------------------------
+# plot_pareto (par problème récurrent)
+# ---------------------------
 def plot_pareto(df: pd.DataFrame, top_n_labels: int = 5):
     if "description" not in df.columns:
         st.warning("La colonne 'description' est absente des données.")
@@ -370,6 +373,7 @@ def plot_pareto(df: pd.DataFrame, top_n_labels: int = 5):
     st.markdown("**Problèmes les plus fréquents :**")
     for i, (label, val) in enumerate(top.items(), start=1):
         st.write(f"{i}. **{label}** — {val} cas — {val/total*100:.1f}%")
+
 
 
 
