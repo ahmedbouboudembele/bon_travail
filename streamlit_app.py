@@ -241,42 +241,19 @@ def update_bon(code: str, updates: Dict[str, Any]) -> None:
         raise KeyError("Code introuvable")
     write_bons(bons)
 
-import streamlit as st
-import pandas as pd
-from typing import Dict, Any
-
-
-from typing import Dict, Any, Tuple
-
-def compute_progress(bon: dict) -> tuple[int, str]:
+def compute_progress(bon: Dict[str, Any]) -> int:
     """
-    Retourne un tuple (progression, couleur) basé sur les colonnes dpt_production, dpt_maintenance, dpt_qualite.
-
-    - 100% si tous les départements sont "Valider"
-    - Sinon % = (colonnes non vides / total colonnes) * 100
-    - Couleur selon l'avancement :
-        - Rouge : < 50%
-        - Orange : 50% <= progress < 80%
-        - Vert : >= 80%
+    Retourne un pourcentage d'avancement basé sur les colonnes remplies.
+    - 100% uniquement si dpt_production, dpt_maintenance et dpt_qualite == "Valider"
+    - Sinon, % = (colonnes non vides / total colonnes) * 100
     """
+    if bon.get("dpt_production") == "Valider" and \
+       bon.get("dpt_maintenance") == "Valider" and \
+       bon.get("dpt_qualite") == "Valider":
+        return 100
 
-    # Si tous valident, 100%
-    if all(bon.get(c) == "Valider" for c in BON_COLUMNS):
-        progress = 100
-    else:
-        filled = sum(1 for c in BON_COLUMNS if bon.get(c) not in ("", None))
-        progress = int((filled / len(BON_COLUMNS)) * 100)
-
-    # Définir la couleur
-    if progress < 50:
-        color = "red"
-    elif progress < 80:
-        color = "orange"
-    else:
-        color = "green"
-
-    return progress, color
-
+    filled = sum(1 for k, v in bon.items() if v not in ("", None))
+    return int((filled / len(BON_COLUMNS)) * 100)
 
 
 
