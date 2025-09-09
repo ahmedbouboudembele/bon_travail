@@ -387,13 +387,12 @@ def export_excel(bons: List[Dict[str,Any]]) -> bytes:
 # ---------------------------
 def load_bon_into_session(bon: Dict[str, Any], page_name: str):
     """Charge un bon dans st.session_state en préfixant par page_name."""
+    updates = {}
     for k in BON_COLUMNS:
         val = bon.get(k, "")
-        # Normaliser la date pour affichage dans date_input
         if k == "date" and val:
             try:
                 if isinstance(val, str):
-                    # Tenter plusieurs formats
                     for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y"):
                         try:
                             val = datetime.strptime(val, fmt).date()
@@ -404,7 +403,9 @@ def load_bon_into_session(bon: Dict[str, Any], page_name: str):
                     val = val.date()
             except Exception:
                 val = date.today()
-        st.session_state[f"{page_name}_form_{k}"] = val
+        updates[f"{page_name}_form_{k}"] = val
+    st.session_state.update(updates)
+
 
 
 def clear_form_session(page_name: str):
