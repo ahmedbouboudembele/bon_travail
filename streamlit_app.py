@@ -651,7 +651,7 @@ def page_dashboard():
     except TypeError:
         # fallback si plot_pareto attend un 'period' (ancienne version) — on ignore period
         try:
-            plot_pareto(df, None, top_n_labels=topn)
+            plot_paretoo(df, None, top_n_labels=topn)
         except Exception:
             pass
 
