@@ -661,26 +661,28 @@ def page_bons(page_name: str):
         poste_default = st.session_state.get(poste_key, "")
 
         if "poste_de_charge" in editable_set:
-            # Crée la liste des options avec "Autres..." à la fin
-            poste_options = [""] + postes + ["Autres..."]
-            index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
-            poste = c2.selectbox("Poste de charge", poste_options, index=index_default, key=poste_key)
+        # Options + "Autres..."
+        poste_options = [""] + postes + ["Autres..."]
+        index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
+        poste = c2.selectbox("Poste de charge", poste_options, index=index_default, key=poste_key)
 
-            # Si utilisateur choisit "Autres...", permettre la saisie libre
-            if st.session_state.get(poste_key) == "Autres...":
-                new_poste = c2.text_input("Ajouter nouveau poste", key=f"{page_name}_new_poste")
-                if new_poste:
-                    new_poste_clean = new_poste.strip()
-                    if new_poste_clean and new_poste_clean not in postes:
-                        postes.append(new_poste_clean)
-                        write_options("options_poste_de_charge", postes)
-                    st.session_state[poste_key] = new_poste_clean
-                    poste = new_poste_clean
+        # Si "Autres..." choisi, afficher champ texte
+        if poste == "Autres...":
+            new_poste_key = f"{page_name}_new_poste"
+            new_poste = c2.text_input("Ajouter nouveau poste", key=new_poste_key)
+            if new_poste:
+                new_poste_clean = new_poste.strip()
+                if new_poste_clean and new_poste_clean not in postes:
+                    postes.append(new_poste_clean)
+                    write_options("options_poste_de_charge", postes)
+                # Mettre à jour le selectbox avec la nouvelle valeur
+            st.session_state[poste_key] = new_poste_clean
+            poste = new_poste_clean
         else:
-            # Affichage lecture seule
+            # Lecture seule
             poste_options = [""] + postes
             index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
-            c2.selectbox("Poste de charge", poste_options, index=index_default, disabled=True, key=f"{poste_key}_ro")
+            c2.selectbox("Poste de charge", poste_options, index=index_default, disabled=True)
             poste = poste_default
 
 
