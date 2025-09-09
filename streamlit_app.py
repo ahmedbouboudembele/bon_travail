@@ -199,14 +199,22 @@ def add_bon(bon: Dict[str, Any]) -> None:
     bons = read_bons()
     if get_bon_by_code(bon.get("code")) is not None:
         raise ValueError("Code déjà présent")
+
+    # --- Normaliser avant stockage ---
     entry = {k: bon.get(k, "") for k in BON_COLUMNS}
+    # Si une valeur est un objet date/datetime → convertir en string
+    for k, v in entry.items():
+        if isinstance(v, (datetime, date)):
+            entry[k] = v.strftime("%Y-%m-%d")
+
     bons.append(entry)
     write_bons(bons)
+
     # décrémenter PDR si fourni (si PDR existe)
     pdr_code = str(entry.get("pdr_utilisee","")).strip()
     if pdr_code:
         pdrs = read_pdr()
-        for i,p in enumerate(pdrs):
+        for i, p in enumerate(pdrs):
             if str(p.get("code","")).strip() == pdr_code:
                 q = int(p.get("quantite",0) or 0)
                 p["quantite"] = max(0, q-1)
@@ -221,13 +229,18 @@ def update_bon(code: str, updates: Dict[str, Any]) -> None:
         if str(r.get("code","")) == str(code):
             for k in BON_COLUMNS:
                 if k in updates:
-                    r[k] = updates[k]
+                    val = updates[k]
+                    # Normaliser les dates avant stockage
+                    if isinstance(val, (datetime, date)):
+                        val = val.strftime("%Y-%m-%d")
+                    r[k] = val
             bons[i] = r
             found = True
             break
     if not found:
         raise KeyError("Code introuvable")
     write_bons(bons)
+
 
 def delete_bon(code: str) -> None:
     bons = read_bons()
@@ -375,7 +388,24 @@ def export_excel(bons: List[Dict[str,Any]]) -> bytes:
 def load_bon_into_session(bon: Dict[str, Any], page_name: str):
     """Charge un bon dans st.session_state en préfixant par page_name."""
     for k in BON_COLUMNS:
-        st.session_state[f"{page_name}_form_{k}"] = bon.get(k, "")
+        val = bon.get(k, "")
+        # Normaliser la date pour affichage dans date_input
+        if k == "date" and val:
+            try:
+                if isinstance(val, str):
+                    # Tenter plusieurs formats
+                    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y"):
+                        try:
+                            val = datetime.strptime(val, fmt).date()
+                            break
+                        except Exception:
+                            continue
+                elif isinstance(val, datetime):
+                    val = val.date()
+            except Exception:
+                val = date.today()
+        st.session_state[f"{page_name}_form_{k}"] = val
+
 
 def clear_form_session(page_name: str):
     for k in BON_COLUMNS:
@@ -570,22 +600,27 @@ def page_bons(page_name: str):
 
     # Formulaire unique (id unique par page)
     form_id = f"form_bon_{page_name}"
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    with st.form(form_id, clear_on_submit=False):
-        c1, c2, c3 = st.columns(3)
+    
+    with st.form(form_id,):
+        c1, c2 = st.columns([2,1])
 
         # Code
         code_key = f"{page_name}_form_code"
         code = c1.text_input("Code", value=st.session_state.get(code_key, ""), key=code_key, disabled=("code" not in editable_set))
 
         # Date (string -> date)
+        # --- Normaliser la valeur de session avant d'instancier le widget (corrige JSON error) ---
         date_key = f"{page_name}_form_date"
-        date_default = st.session_state.get(date_key, date.today().strftime("%Y-%m-%d"))
-        try:
-            default_date_obj = datetime.strptime(date_default, "%Y-%m-%d").date()
-        except Exception:
-            default_date_obj = date.today()
-        date_input = c1.date_input("Date", value=default_date_obj, key=date_key, disabled=("date" not in editable_set))
+
+        # Récupérer la valeur stockée (peut être string, date, datetime, None)
+        sess_val = st.session_state.get(date_key, None)
+        safe_date = _to_date_obj(sess_val)          # convertit proprement en datetime.date
+        # Forcer la session à contenir un datetime.date (streamlit widget serialise correctement)
+        st.session_state[date_key] = safe_date
+
+        # Maintenant créer le widget en passant une datetime.date sûr
+        date_input = c1.date_input("Date", value=st.session_state[date_key], key=date_key, disabled=("date" not in editable_set))
+
 
 
         # Arrêt déclaré par
@@ -677,7 +712,7 @@ def page_bons(page_name: str):
         dpt_p = st.selectbox("Dpt Production", ["","Valider","Non Valider"], index=(["","Valider","Non Valider"].index(st.session_state.get(dpt_p_key,"")) if st.session_state.get(dpt_p_key,"") in ["","Valider","Non Valider"] else 0), key=dpt_p_key, disabled=("dpt_production" not in editable_set))
 
         submit_key = f"submit_{page_name}"
-        submitted = st.form_submit_button("Ajouter / Mettre à jour", key=submit_key)
+        submitted = st.form_submit_button("Ajouter / Mettre à jour", key=f"submit_{page_name}")
 
         if submitted:
             code_v = st.session_state.get(code_key, "").strip()
