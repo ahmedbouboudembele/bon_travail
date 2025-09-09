@@ -505,7 +505,7 @@ def page_bons(page_name: str):
 
     # Définition des champs éditables par fenêtre
     production_allowed = {
-        "code", "heure_declaration", "description_probleme", "arret_declare_par",
+        "code","date", "heure_declaration", "description_probleme", "arret_declare_par",
         "poste_de_charge", "machine_arreter", "resultat", "condition_acceptation", "dpt_production"
     }
     maintenance_allowed = {
