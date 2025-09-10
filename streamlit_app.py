@@ -797,31 +797,45 @@ def page_bons(page_name: str):
         arret = c1.text_input("Arrêt déclaré par", value=st.session_state.get(arret_key, ""), key=arret_key, disabled=("arret_declare_par" not in editable_set))
 
         # Poste de charge
-        # Poste de charge (Production uniquement avec "Autres...")
         poste_key = f"{page_name}_form_poste_de_charge"
         postes = read_options("options_poste_de_charge")
         poste_default = st.session_state.get(poste_key, "")
 
         if "poste_de_charge" in editable_set:
+            # construire options dynamiques
             poste_options = [""] + postes + ["Autres..."]
             index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
             poste = c2.selectbox("Poste de charge", poste_options, index=index_default, key=poste_key)
 
             if poste == "Autres...":
                 new_poste_key = f"{page_name}_new_poste"
-                new_poste = c2.text_input("Ajouter nouveau poste", key=new_poste_key)
-                if new_poste:
+                add_poste_confirm_key = f"{page_name}_add_poste_confirm"
+                new_poste = c2.text_input("Ajouter nouveau poste (libre)", key=new_poste_key)
+
+                # case à cocher pour confirmer l'ajout immédiat (permis dans un form)
+                add_now = c2.checkbox("Enregistrer ce poste maintenant", key=add_poste_confirm_key)
+
+                if new_poste and add_now:
                     new_poste_clean = new_poste.strip()
-                    if new_poste_clean and new_poste_clean not in postes:
-                        postes.append(new_poste_clean)
-                        write_options("options_poste_de_charge", postes)
+                    if new_poste_clean:
+                    # relire options au cas où elles ont changé
+                    postes_current = read_options("options_poste_de_charge")
+                    if new_poste_clean not in postes_current:
+                        postes_current.append(new_poste_clean)
+                        write_options("options_poste_de_charge", postes_current)
+                        # Mettre à jour la session pour conserver la sélection et forcer re-render
                         st.session_state[poste_key] = new_poste_clean
-                        poste = new_poste_clean
+                        # vider le champ d'ajout et décocher
+                        st.session_state[new_poste_key] = ""
+                        st.session_state[add_poste_confirm_key] = False
+                        st.experimental_rerun()
+                    else:
+                        st.info("Ce poste existe déjà.")
         else:
-            # Lecture seule
+            # affichage en lecture seule
             poste_options = [""] + postes
             index_default = poste_options.index(poste_default) if poste_default in poste_options else 0
-            c2.selectbox("Poste de charge", poste_options, index=index_default, disabled=True)
+            c2.selectbox("Poste de charge", poste_options, index=index_default, disabled=True, key=f"{poste_key}_ro")
             poste = poste_default
 
 
