@@ -818,19 +818,19 @@ def page_bons(page_name: str):
                 if new_poste and add_now:
                     new_poste_clean = new_poste.strip()
                     if new_poste_clean:
-                    # relire options au cas où elles ont changé
-                    postes_current = read_options("options_poste_de_charge")
-                    if new_poste_clean not in postes_current:
-                        postes_current.append(new_poste_clean)
-                        write_options("options_poste_de_charge", postes_current)
-                        # Mettre à jour la session pour conserver la sélection et forcer re-render
-                        st.session_state[poste_key] = new_poste_clean
-                        # vider le champ d'ajout et décocher
-                        st.session_state[new_poste_key] = ""
-                        st.session_state[add_poste_confirm_key] = False
-                        st.experimental_rerun()
-                    else:
-                        st.info("Ce poste existe déjà.")
+                        # relire options au cas où elles ont changé
+                        postes_current = read_options("options_poste_de_charge")
+                        if new_poste_clean not in postes_current:
+                            postes_current.append(new_poste_clean)
+                            write_options("options_poste_de_charge", postes_current)
+                            # Mettre à jour la session pour conserver la sélection et forcer re-render
+                            st.session_state[poste_key] = new_poste_clean
+                            # vider le champ d'ajout et décocher
+                            st.session_state[new_poste_key] = ""
+                            st.session_state[add_poste_confirm_key] = False
+                            st.experimental_rerun()
+                        else:
+                            st.info("Ce poste existe déjà.")
         else:
             # affichage en lecture seule
             poste_options = [""] + postes
