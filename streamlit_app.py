@@ -970,6 +970,7 @@ def page_bons(page_name: str):
                     st.error(str(e))
 
     # ---- Gestion des options (EN DEHORS du form) ----
+    # ---- Gestion des options (EN DEHORS du form) ----
     if page_name.lower().startswith("production"):
         st.markdown("### ➕ Ajouter des options (postes / descriptions)")
 
@@ -984,7 +985,7 @@ def page_bons(page_name: str):
                     postes_current.append(new_poste_out.strip())
                     write_options("options_poste_de_charge", postes_current)
                     st.success(f"Poste '{new_poste_out}' ajouté.")
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.info("Ce poste existe déjà.")
 
@@ -997,9 +998,10 @@ def page_bons(page_name: str):
                     descs_current.append(new_desc_out.strip())
                     write_options("options_description_probleme", descs_current)
                     st.success(f"Description '{new_desc_out}' ajoutée.")
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.info("Cette description existe déjà.")
+
     
     st.markdown('</div>', unsafe_allow_html=True)
 
