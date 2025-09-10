@@ -970,37 +970,62 @@ def page_bons(page_name: str):
                     st.error(str(e))
 
     # ---- Gestion des options (EN DEHORS du form) ----
-    # ---- Gestion des options (EN DEHORS du form) ----
     if page_name.lower().startswith("production"):
-        st.markdown("### ➕ Ajouter des options (postes / descriptions)")
+        st.markdown("### ➕ / ➖ Gérer les postes et descriptions")
 
         col_g1, col_g2 = st.columns(2)
 
-        # Ajouter un poste
-        new_poste_out = col_g1.text_input("Nouveau poste", key=f"{page_name}_add_poste_out")
-        if col_g1.button("Ajouter poste", key=f"{page_name}_btn_add_poste_out"):
+        # ---- Postes ----
+        new_poste_out = col_g1.text_input("Poste", key=f"{page_name}_add_poste_out")
+
+        c1_add, c1_del = col_g1.columns([1,1])
+        # Ajouter
+        if c1_add.button("Ajouter poste", key=f"{page_name}_btn_add_poste_out"):
             if new_poste_out:
                 postes_current = read_options("options_poste_de_charge")
-                if new_poste_out not in postes_current:
+                if new_poste_out.strip() not in postes_current:
                     postes_current.append(new_poste_out.strip())
                     write_options("options_poste_de_charge", postes_current)
                     st.success(f"Poste '{new_poste_out}' ajouté.")
                     st.rerun()
                 else:
                     st.info("Ce poste existe déjà.")
+        # Supprimer
+        if c1_del.button("Supprimer poste", key=f"{page_name}_btn_del_poste_out"):
+            postes_current = read_options("options_poste_de_charge")
+            if new_poste_out.strip() in postes_current:
+                postes_current.remove(new_poste_out.strip())
+                write_options("options_poste_de_charge", postes_current)
+                st.warning(f"Poste '{new_poste_out}' supprimé.")
+                st.rerun()
+            else:
+                st.info("Ce poste n'existe pas.")
 
-        # Ajouter une description
-        new_desc_out = col_g2.text_input("Nouvelle description", key=f"{page_name}_add_desc_out")
-        if col_g2.button("Ajouter description", key=f"{page_name}_btn_add_desc_out"):
+        # ---- Descriptions ----
+        new_desc_out = col_g2.text_input("Description", key=f"{page_name}_add_desc_out")
+        c2_add, c2_del = col_g2.columns([1,1])
+        # Ajouter
+        if c2_add.button("Ajouter description", key=f"{page_name}_btn_add_desc_out"):
             if new_desc_out:
                 descs_current = read_options("options_description_probleme")
-                if new_desc_out not in descs_current:
+                if new_desc_out.strip() not in descs_current:
                     descs_current.append(new_desc_out.strip())
                     write_options("options_description_probleme", descs_current)
                     st.success(f"Description '{new_desc_out}' ajoutée.")
                     st.rerun()
                 else:
                     st.info("Cette description existe déjà.")
+        # Supprimer
+        if c2_del.button("Supprimer description", key=f"{page_name}_btn_del_desc_out"):
+            descs_current = read_options("options_description_probleme")
+            if new_desc_out.strip() in descs_current:
+                descs_current.remove(new_desc_out.strip())
+                write_options("options_description_probleme", descs_current)
+                st.warning(f"Description '{new_desc_out}' supprimée.")
+                st.rerun()
+            else:
+                st.info("Cette description n'existe pas.")
+
 
     
     st.markdown('</div>', unsafe_allow_html=True)
