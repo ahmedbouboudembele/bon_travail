@@ -969,33 +969,37 @@ def page_bons(page_name: str):
                 except Exception as e:
                     st.error(str(e))
 
-    # ---- ⚙️ Gestion des options (EN DEHORS du form) ----
+    # ---- Gestion des options (EN DEHORS du form) ----
     if page_name.lower().startswith("production"):
-        st.markdown("### ⚙️ Gérer les options")
+        st.markdown("### ➕ Ajouter des options (postes / descriptions)")
 
         col_g1, col_g2 = st.columns(2)
 
-        # Supprimer un poste
-        to_del_poste = col_g1.selectbox("Supprimer un poste", [""] + read_options("options_poste_de_charge"))
-        if col_g1.button("Supprimer poste"):
-            if to_del_poste:
-                opts = read_options("options_poste_de_charge")
-                if to_del_poste in opts:
-                    opts.remove(to_del_poste)
-                    write_options("options_poste_de_charge", opts)
-                    st.success(f"Poste '{to_del_poste}' supprimé.")
-                    st.rerun()
+        # Ajouter un poste
+        new_poste_out = col_g1.text_input("Nouveau poste", key=f"{page_name}_add_poste_out")
+        if col_g1.button("Ajouter poste", key=f"{page_name}_btn_add_poste_out"):
+            if new_poste_out:
+                postes_current = read_options("options_poste_de_charge")
+                if new_poste_out not in postes_current:
+                    postes_current.append(new_poste_out.strip())
+                    write_options("options_poste_de_charge", postes_current)
+                    st.success(f"Poste '{new_poste_out}' ajouté.")
+                    st.experimental_rerun()
+                else:
+                    st.info("Ce poste existe déjà.")
 
-        # Supprimer une description
-        to_del_desc = col_g2.selectbox("Supprimer une description", [""] + read_options("options_description_probleme"))
-        if col_g2.button("Supprimer description"):
-            if to_del_desc:
-                opts = read_options("options_description_probleme")
-                if to_del_desc in opts:
-                    opts.remove(to_del_desc)
-                    write_options("options_description_probleme", opts)
-                    st.success(f"Description '{to_del_desc}' supprimée.")
-                    st.rerun()
+        # Ajouter une description
+        new_desc_out = col_g2.text_input("Nouvelle description", key=f"{page_name}_add_desc_out")
+        if col_g2.button("Ajouter description", key=f"{page_name}_btn_add_desc_out"):
+            if new_desc_out:
+                descs_current = read_options("options_description_probleme")
+                if new_desc_out not in descs_current:
+                    descs_current.append(new_desc_out.strip())
+                    write_options("options_description_probleme", descs_current)
+                    st.success(f"Description '{new_desc_out}' ajoutée.")
+                    st.experimental_rerun()
+                else:
+                    st.info("Cette description existe déjà.")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
