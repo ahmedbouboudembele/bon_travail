@@ -971,7 +971,7 @@ def page_bons(page_name: str):
 
     # ---- Gestion des options (EN DEHORS du form) ----
     if page_name.lower().startswith("production"):
-        st.markdown("### ➕ / ➖ Gérer les postes et descriptions")
+        st.markdown("### Gérer les postes et descriptions")
 
         col_g1, col_g2 = st.columns(2)
 
