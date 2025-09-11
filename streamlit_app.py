@@ -746,10 +746,10 @@ def page_bons(page_name: str):
         "poste_de_charge", "machine_arreter", "resultat", "condition_acceptation", "dpt_production"
     }
     maintenance_allowed = {
-        "heure_debut_intervention", "heure_fin_intervention", "technicien", "observation", "dpt_maintenance"
+        "heure_debut_intervention", "heure_fin_intervention", "technicien","action","pdr_utilisee", "observation", "dpt_maintenance"
     }
     qualite_allowed = {
-        "heure_debut_intervention", "heure_fin_intervention", "technicien", "observation", "dpt_qualite"
+        "dpt_qualite"
     }
 
     if page_name.lower().startswith("production"):
